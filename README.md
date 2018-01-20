@@ -1,19 +1,36 @@
-# Your Next Stop!
+### Team Name: No Limit Data  
 
-## This project examines user input on restaurants to determine their next restaurant destination. The features examined are:
+### Project Name: Your Next Stop!  
 
-    - The restaurant's cuisine
+### Team Members: 
+Sharanya Banavar  
+Maria Leano  
+Ruchi Chandra   
+Andy Oh  
 
-    - An image from the restaurant's YELP page
+**Date:** 2/3/2018  
 
-    - The restaurant's price range
+### Proposal: 
 
-    - The restaurant's rating
+This project examines user input on restaurants to determine their next restaurant destination. The features examined are:  
 
-    - Whether the restaurant allows reservations
+    - The restaurant's cuisine  
+    - An image from the restaurant's YELP page  
+    - The restaurant's price range  
+    - The restaurant's rating  
+    - Whether the restaurant allows reservations  
+    - Whether the restaurant delivers  
 
-    - Whether the restaurant delivers
+The user will then choose whether they would order food from the restaurant displayed and based on 5 - 10 decisions from the user, we will use machine learning to determine the best restaurant for the user.
 
-### The user will then choose whether they would order food from the restaurant displayed and based on 5 - 10 decisions from the user, we will use machine learning to determine the best restaurant for the user.
+Our algorithm will be built on previous answers and response, getting more accurate over time.
 
-### Our algorithm will be built on previous answers and response, getting more accurate over time.
+### Data Source:
+- Yelp  
+
+### Technologies Used: 
+- HTML/CSS
+- MySQL
+- Flask
+
+### Project Links: 
