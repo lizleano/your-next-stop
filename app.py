@@ -37,6 +37,7 @@ SEARCH_LIMIT = 50
 SEARCH_MAX_LIMIT = 1000
 SORT_BY = 'rating'
 
+
 # variables
 newOffset = 0
 
@@ -55,6 +56,7 @@ DB_CONN_URI_DEFAULT= "mysql://nchwjnkppsn6j4vj:s23q3vtsg2c0a4sv@o3iyl77734b9n3tg
 # DB_CONN_URI_DEFAULT = (DB_CONN_FORMAT.format(
 #     database=DB_NAME,
 #     **DB_CONFIG_DICT)) 
+
     
 engine = create_engine(DB_CONN_URI_DEFAULT)
 
@@ -66,8 +68,10 @@ Base.prepare(engine, reflect=True)
 print(Base.metadata.tables.keys())
 
 # Save reference to the table
+
 # Restaurants = Base.classes.restaurants
 # Zipcodes = Base.classes.zipcodes
+
 
 # Create our session (link) from Python to the DB
 session = Session(engine)
@@ -90,6 +94,7 @@ def default():
 
 def updateSQL(dataframe):    
     dataframe.to_sql(name='restaurant', con=engine, if_exists='append', index=False)
+
 
 def request(host, path, api_key, url_params=None):
 #     send a GET request to the API.
@@ -160,6 +165,7 @@ def yelpsearch(term, location):
         for business in response['businesses']:
             try:
                 reservations = False               
+
                 if 'restaurant_reservation' in business['transactions']:
                     reservations=True
                 # if i >= 0:
@@ -172,6 +178,7 @@ def yelpsearch(term, location):
                 
                 lat = business['coordinates']['latitude']
                 lng = business['coordinates']['longitude']
+
 
                 rest_dict = {
                     'name':business['name'].split(",")[0],
@@ -192,12 +199,15 @@ def yelpsearch(term, location):
                 
                 restaurants.append(rest_dict)
             except:
+
                 print("error!!!!!")
             
     
     df = pd.DataFrame(restaurants)
     df.to_csv("restaurant.csv", index=False)
+
     updateSQL(df)
+
     return restaurants
 
 
