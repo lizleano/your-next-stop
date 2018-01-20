@@ -1,0 +1,37 @@
+address,cuisine,delivery,image_url,latitude,longitude,name,phone,price,rating,reservations,review_count,zipcode
+"452 Main St,Metuchen, NJ 08840",Asian Fusion,True,https://s3-media3.fl.yelpcdn.com/bphoto/pGcwBHmZBuUIxFAhjK4T4A/o.jpg,40.5429233325768,-74.3619989231229,Fusha Asian Bistro,(848) 260-0777,$$,4.5,False,86,08840
+"567 Middlesex Ave,Metuchen, NJ 08840",Caribbean,True,https://s3-media4.fl.yelpcdn.com/bphoto/wPeUHVWZ7VkX1x7nNRXYDQ/o.jpg,40.5423827,-74.3643949,Breezes Cafe & Grill,(732) 902-6220,$$,4.5,False,117,08840
+"25 New St,Metuchen, NJ 08840",Italian,True,https://s3-media3.fl.yelpcdn.com/bphoto/wzsle1nnhm5D4moiZefnYg/o.jpg,40.5414611846209,-74.3626939505339,Novita Bistro and Lounge,(732) 549-5306,$$$,4.0,False,190,08840
+"275 Amboy Ave,Metuchen, NJ 08840",Cafes,True,https://s3-media1.fl.yelpcdn.com/bphoto/Y69pCy9xm2obF_HFYrxbIg/o.jpg,40.5376122011973,-74.3600023820753,Angie's Café & Bakery,(732) 515-9515,$,4.5,False,52,08840
+"400 Main St,Metuchen, NJ 08840",Irish,True,https://s3-media1.fl.yelpcdn.com/bphoto/D3sBqPBqiwM1WXWuxVdKcQ/o.jpg,40.541342,-74.361062,Hailey's Harp and Pub,(732) 321-0777,$$,4.0,False,210,08840
+"154 Main St,Metuchen, NJ 08840",Italian,True,https://s3-media3.fl.yelpcdn.com/bphoto/01bn5KRgIelfUEIfVVvyTw/o.jpg,40.5326509,-74.358823,Civile Cucina Italiana,(732) 662-9982,$$,4.5,False,81,08840
+"75 State Rt 27,Edison, NJ 08820",Italian,True,https://s3-media2.fl.yelpcdn.com/bphoto/bmjsG8_yJXrbcUgHDY00AA/o.jpg,40.55803,-74.34189,Villa Gennaro,(732) 549-8554,$$,4.0,False,93,08820
+"426 Main St,Metuchen, NJ 08840",Thai,True,https://s3-media1.fl.yelpcdn.com/bphoto/wNkAwVzE-Yob-PY8JHds-w/o.jpg,40.54228,-74.36151,Phattra Thai Restaurant,(732) 515-9333,$$,4.0,False,129,08840
+"456 Main St,Metuchen, NJ 08840",Sandwiches,True,https://s3-media2.fl.yelpcdn.com/bphoto/aVhs4U1ZMIPpH19_VBNk6A/o.jpg,40.5428638,-74.362046,Fresco,(732) 744-9618,$,4.0,False,44,08840
+"420 Main St,Metuchen, NJ 08840",Wine Bars,True,https://s3-media2.fl.yelpcdn.com/bphoto/403h1gWI-Nn1k0xj64wNfA/o.jpg,40.5419,-74.36133,Cai's Cafe,(732) 243-9925,$,4.0,False,45,08840
+"52 Rt 27,Edison, NJ 08818",Sri Lankan,True,https://s3-media4.fl.yelpcdn.com/bphoto/krS84aA2MHQGp0qXS2iMkA/o.jpg,40.5573806762695,-74.3440246582031,Sigiri,(732) 744-9667,$$,4.0,False,95,08818
+"9 Lincoln Hwy,Edison, NJ 08817",Italian,True,https://s3-media2.fl.yelpcdn.com/bphoto/_GUGgRm6t5-YgFiywRVOUQ/o.jpg,40.5549441723547,-74.3450391849419,LouCas Restaurant,(732) 549-8580,$$,3.5,False,227,08817
+"453 Main St,Metuchen, NJ 08840",Pizza,True,https://s3-media4.fl.yelpcdn.com/bphoto/If6nmOny2KuK1kJvWDrSFw/o.jpg,40.5427543498551,-74.3622410103065,Antonio's Brick Oven Pizza,(732) 603-0008,$$,4.0,False,116,08840
+"2090 State Rt 27,Edison, NJ 08817",Vietnamese,True,https://s3-media1.fl.yelpcdn.com/bphoto/G751tvcr1L9HTSjzwxe34Q/o.jpg,40.52588,-74.38672,Viet Cafe,(732) 287-9500,$,4.0,False,87,08817
+"10 Pearl St,Metuchen, NJ 08840",Cafes,True,https://s3-media3.fl.yelpcdn.com/bphoto/ccKZ3WsPSE4ll8vCsbHf2g/o.jpg,40.5406062855842,-74.3619477943609,Pearl St Cafe,(732) 662-1600,$$,4.5,False,15,08840
+"87 Central Ave,Metuchen, NJ 08840",Latin American,True,https://s3-media2.fl.yelpcdn.com/bphoto/ahQfhhV4WgZHMYhMjT4brg/o.jpg,40.5416845,-74.3677016,Lola's Latin Bistro,(732) 548-5652,$$,3.5,False,196,08840
+"257 Central Ave,Metuchen, NJ 08840",Sushi Bars,True,https://s3-media4.fl.yelpcdn.com/bphoto/bDHQ4ypY3cgaKedonhYNRg/o.jpg,40.546474,-74.370704,Rio of Japan,(732) 767-1122,$$$,4.0,False,25,08840
+"12 New St,Metuchen, NJ 08840",Italian,True,https://s3-media1.fl.yelpcdn.com/bphoto/vTeJGSJTDnx-SAP6C4PvPg/o.jpg,40.541756885605,-74.3622697231574,Torino Restaurants,(732) 549-2500,$$,4.0,False,123,08840
+"419 Main St,Metuchen, NJ 08840",Greek,True,https://s3-media2.fl.yelpcdn.com/bphoto/xuK2g-P025zPTJQKLjW0UQ/o.jpg,40.5417681375299,-74.3617109209299,The Greek on Main,(732) 515-9457,$$,4.0,False,69,08840
+"15 New St,Metuchen, NJ 08840",Sushi Bars,True,https://s3-media4.fl.yelpcdn.com/bphoto/xlIJActIEOfdbMsLCfeFnQ/o.jpg,40.5415204,-74.362319,Sushi Suzuki,(732) 767-6688,$$,4.0,False,76,08840
+"7 New St,Metuchen, NJ 08840",Southern,True,https://s3-media1.fl.yelpcdn.com/bphoto/S6AlbhK4gdlCck6LRbo3mA/o.jpg,40.5416465,-74.3620452,Bishop's Bistro,(732) 549-0759,$$,4.0,False,30,08840
+"424 Middlesex Ave,Metuchen, NJ 08840",American (New),True,https://s3-media4.fl.yelpcdn.com/bphoto/0AOYMbCLvbuJ4wByyQ8uhQ/o.jpg,40.54578,-74.36014,The Metuchen Inn,(732) 494-6444,$$$,3.5,False,106,08840
+"205 Main St,Metuchen, NJ 08840",Pizza,True,https://s3-media3.fl.yelpcdn.com/bphoto/Yfi-DsmvX57sexf3777cZQ/o.jpg,40.53456,-74.36015,D'novo Restaurant,(732) 243-9295,$$,3.5,False,41,08840
+"439 Main St,Metuchen, NJ 08840",Creperies,True,https://s3-media3.fl.yelpcdn.com/bphoto/Lv2KqlsIiSmxg0wAL6UCYw/o.jpg,40.542421,-74.3620043,Cafe Paris,(732) 603-9200,$$,3.5,True,178,08840
+"21 Cortlandt St,Ste 1,Edison, NJ 08837",Indian,True,https://s3-media4.fl.yelpcdn.com/bphoto/HM2kUJPEhvF1IDXrvH95_A/o.jpg,40.52538,-74.36157,Akbar Restaurant,(732) 632-8822,$$,3.5,False,145,08837
+"1199 Amboy Ave,Store A5,Edison, NJ 08837",Japanese,True,https://s3-media3.fl.yelpcdn.com/bphoto/cCcBj99A8Nkgq2SXrbTEPA/o.jpg,40.5348917748089,-74.34646804901,Sushi Saga,(732) 243-9353,$$,3.5,True,130,08837
+"9 Lincoln Hwy,Colonial Village Shopping Center,Edison, NJ 08817",Chinese,True,https://s3-media3.fl.yelpcdn.com/bphoto/-PAjLegcFy50PijIrOx5YQ/o.jpg,40.555172932268,-74.3447506427765,Meemah Chinese-Malaysian Cuisines,(732) 906-2223,$$,3.5,False,73,08817
+"455 Main St,Metuchen, NJ 08840",Mediterranean,True,https://s3-media3.fl.yelpcdn.com/bphoto/Ml5gtvaXe_dqFO8K8kaGBg/o.jpg,40.5426715,-74.3623068,The Orchid Restaurant,(732) 321-9829,$$,4.0,False,33,08840
+"422 Main St,Metuchen, NJ 08840",Italian,True,https://s3-media2.fl.yelpcdn.com/bphoto/68wfXEL7-K-B7Bf4XG3eTg/o.jpg,40.5421358,-74.3615421,Mangia Toscano,(732) 744-0100,$$,4.0,False,24,08840
+"159 Jackson Ave,Edison, NJ 08837",Pakistani,True,https://s3-media1.fl.yelpcdn.com/bphoto/kSO36KewJw_Dv4DPwKgaRQ/o.jpg,40.532585144043,-74.3408432006836,Shahnawaz Banquet,(732) 225-4640,$$,3.5,True,90,08837
+"413 Main St,Metuchen, NJ 08840",Mexican,True,https://s3-media1.fl.yelpcdn.com/bphoto/n46fwtDnfbwCBfhFgjGCKg/o.jpg,40.54144,-74.36211,Mariachi Mexican Restaurant,(732) 243-9851,$$,3.5,True,137,08840
+"140 Durham Ave,Metuchen, NJ 08840",Cafes,True,https://s3-media4.fl.yelpcdn.com/bphoto/8gKjKTceblWtmyTu_Mlevw/o.jpg,40.54387,-74.36952,Hatch 44 Cafe,(732) 662-7200,$$,3.5,False,36,08840
+"222 Plainfield Rd,Edison, NJ 08820",Steakhouses,True,https://s3-media2.fl.yelpcdn.com/bphoto/rJ_0g9u81VUsNjlWoJJZ_Q/o.jpg,40.5566329956055,-74.3709487915039,Charlie Brown's,(732) 494-6135,$$,3.0,False,66,08820
+"1 State Rte 27,Edison, NJ 08820",Japanese,True,https://s3-media2.fl.yelpcdn.com/bphoto/iQgJ3NG2Qxkme71tdSPy6Q/o.jpg,40.555227,-74.3459531,Ichiban Japanese Restaurant,(732) 767-9292,$$,3.5,False,28,08820
+"2293 Lincoln Hwy,Metuchen, NJ 08840",Sports Bars,True,https://s3-media3.fl.yelpcdn.com/bphoto/vjtDJeWmBSbtJXkrTjhx5A/o.jpg,40.534486,-74.3765093,The Brown Stone,(732) 902-2741,$$,3.0,False,77,08840
+"645 Middlesex Ave,Whole Foods Market,Metuchen, NJ 08840",Bars,True,https://s3-media1.fl.yelpcdn.com/bphoto/fZG5UOzRP49jFtaT8hiFEw/o.jpg,40.53948750864,-74.3664063364172,Comida Fresca,(732) 515-6180,$,2.5,False,10,08840
