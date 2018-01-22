@@ -1,8 +1,3 @@
-
-# coding: utf-8
-
-# In[9]:
-
 import json, requests
 import csv
 import pandas as pd
@@ -13,17 +8,18 @@ from datetime import datetime
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, func, literal_column
 
 from flask import Flask, jsonify, render_template
-# In[10]:
+
+#################################################
+# Constants and Variables
+#################################################
 
 # access token for api
 # ykey_access_token = "CVTqDuGbB3YF4mUT1Kx3_yLW43u9BKAxZDiirJ0Ua6VS6UMKqzAdefhsy3H-0zHOoYiczJZ0hwZ8YNhlWqsvst5c-pQ13fscyQUDfFstAOtBC7mrUs98aZCFQHRhWnYx"
 ykey_access_token = "6dF_ksyC2PaHJDLhgr2_joA12Zb48JjopdvVAGD3jJ49uPuy_Cvbo-WHjusl8rYpPqYJHoHgT053pZgvr6T6EXDTxq5BDCJBFetpbAkdVneMDSTk88RqOMnZeABhWnYx"
-
-
-# In[11]:
 
 # API constants
 API_HOST = 'https://api.yelp.com'
@@ -31,49 +27,34 @@ SEARCH_PATH = '/v3/businesses/search'
 BUSINESS_PATH = '/v3/businesses/'
 
 # Defaults 
-DEFAULT_TERM = 'restaurant'
+DEFAULT_TERM = 'restaurants'
+DEFAULT_CUISINE = 'italian,asian,mexican,mediterrean,indian'
 DEFAULT_LOCATION = '10005'
 SEARCH_LIMIT = 50
 SEARCH_MAX_LIMIT = 1000
 SORT_BY = 'rating'
 
-
 # variables
 newOffset = 0
 
-# Establish Connection to MySQL
-# DB_CONFIG_DICT = {
-#         'user': 'root',
-#         'password': 'Bernice1!',
-#         'host': 'localhost',
-#         'port': 3306,
-#     }
+#################################################
+# MySQL Setup
+#################################################
 
 DB_CONN_URI_DEFAULT= "mysql://nchwjnkppsn6j4vj:s23q3vtsg2c0a4sv@o3iyl77734b9n3tg.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zx309qzs0npjpbew"
 
-# DB_CONN_FORMAT = "mysql://{user}:{password}@{host}:{port}/{database}"
-# DB_NAME = "machinelearning"
-# DB_CONN_URI_DEFAULT = (DB_CONN_FORMAT.format(
-#     database=DB_NAME,
-#     **DB_CONFIG_DICT)) 
-
-    
 engine = create_engine(DB_CONN_URI_DEFAULT)
 
 # reflect an existing database into a new model
 Base = automap_base()
 # reflect the tables
 Base.prepare(engine, reflect=True)
-
 print(Base.metadata.tables.keys())
 
 # Save reference to the table
+Restaurant = Base.classes.restaurants
+ZipRequest = Base.classes.ziprequests
 
-# Restaurants = Base.classes.restaurants
-# Zipcodes = Base.classes.zipcodes
-
-
-# Create our session (link) from Python to the DB
 session = Session(engine)
 
 #################################################
@@ -81,19 +62,39 @@ session = Session(engine)
 #################################################
 app = Flask(__name__)
 
-
 #################################################
-# Functions
+# Routes
 #################################################
 # Default route to render index.html
 @app.route("/")
 def default():
-    # Default route to render index.html    
+    # Default route to render landing page    
     return render_template("index.html")
 
+# Request restaurants by zipcode
+@app.route("/mlyelp/search/<zipcode>", methods=['GET'])
+@app.route("/mlyelp/search/<zipcode>/<cuisine>", methods=['GET'])
+def searchapi(zipcode,cuisine=None):
+    # print (zipcode)
+    # print(cuisine)
+    if cuisine is None:
+        cuisine = DEFAULT_CUISINE
+    # print (cuisine)
 
-def updateSQL(dataframe):    
-    dataframe.to_sql(name='restaurant', con=engine, if_exists='append', index=False)
+    if findZipcode(zipcode):
+        # get data from DB
+        data = get_zipcode_data(zipcode)
+    else: 
+        # get new data from yelp
+        data = yelpsearch(cuisine, zipcode)
+
+    return jsonify(data)   
+
+#################################################
+# Functions
+#################################################
+def updateSQL(dataframe, location): 
+    dataframe.to_sql(name='restaurants', con=engine, if_exists='append', index=False)
 
 
 def request(host, path, api_key, url_params=None):
@@ -110,6 +111,7 @@ def request(host, path, api_key, url_params=None):
 
 #     Raises:
 #         HTTPError: An error occurs from the HTTP request.
+
     url = '%s%s' % (host, path)
 
     url_params = url_params or {}
@@ -123,38 +125,29 @@ def request(host, path, api_key, url_params=None):
     return response.json()
 
 
-# In[14]:
+# Query the Search API by a search term and location.
+def yelpsearch(cuisine, location):
+    # Args:         
+    #     categories (str separated by comma) The types of cuisine passed to the API
+    #     location (str separated by comma): The zipcodes passed to the API.
 
-def yelpsearch(term, location):
-    """Query the Search API by a search term and location.
-
-    Args:
-        term (str): The search term passed to the API.
-        location (str): The search location passed to the API.
-
-    Returns:
-        dict: The JSON response from the request.
-    """
-
-    # Check if zipcode has been searched recently (1 week)
-    # for test, pull everytime
-    # if zipcode found
-
-
-    #else
+    # Returns:
+    #     list of restaurants
+    
     restaurants = []
-
     for i in range(10):
         if i == 0:
             newOffset = 0
         else:
             newOffset = i*SEARCH_LIMIT
-            print (newOffset)
+            print ("offset: %s   limit: %s" % (newOffset, SEARCH_LIMIT))
             
         # data = yelpsearch(DEFAULT_TERM, zipcodes, newOffset)
         url_params = {
-            'term': term.replace(' ', '+'),
-            'location': location.replace(' ', '+'),
+            # term (str): The search term passed to the API. In our case, restaurants
+            'term': DEFAULT_TERM,
+            # 'categories': cuisine,
+            'location': location,
             'limit': SEARCH_LIMIT,
             'offset': newOffset,
             'sort_by': SORT_BY
@@ -162,14 +155,16 @@ def yelpsearch(term, location):
         
         response = request(API_HOST, SEARCH_PATH, ykey_access_token, url_params=url_params)
 
+        print("records returned: %s" % (len(response['businesses'])))
+        addCtr = 0
+        # if (len(response['businesses'] > 0)):
         for business in response['businesses']:
+            # print(business['name'])
             try:
                 reservations = False               
 
                 if 'restaurant_reservation' in business['transactions']:
                     reservations=True
-                # if i >= 0:
-                #     reservations = True
                     
                 delivery = True    
                 i, = np.where( business['transactions']=='delivery' )
@@ -179,8 +174,8 @@ def yelpsearch(term, location):
                 lat = business['coordinates']['latitude']
                 lng = business['coordinates']['longitude']
 
-
                 rest_dict = {
+                    'requestid': location,
                     'name':business['name'].split(",")[0],
                     'image_url': business['image_url'],
                     'review_count': business['review_count'],
@@ -194,62 +189,117 @@ def yelpsearch(term, location):
                     'reservations': reservations,
                     'delivery': delivery,
                     'cuisine': business['categories'][0]['title']
-                    
                 }
                 
                 restaurants.append(rest_dict)
             except:
-
-                print("error!!!!!")
-            
+                # print("error!!!!!")
+                pass
     
     df = pd.DataFrame(restaurants)
-    df.to_csv("restaurant.csv", index=False)
+    # df.to_csv("restaurant_%s.csv" % location, index=False)
+    updateSQL(df, location)
 
-    updateSQL(df)
+    print("restaurants collected through yelp API!!!!")
 
     return restaurants
 
 
-@app.route("/mlyelp/search/<zipcodes>")
-def searchapi(zipcodes):       
-    data = yelpsearch(DEFAULT_TERM, zipcodes)
 
-    return jsonify(data)
+def findZipcode(zipcode):
+    # print(ZipRequest.__table__.columns)
+    zipCodeFound = True
+    try:
+        result = session.query(ZipRequest.requestid, ZipRequest.lastrequestdate).\
+                filter(ZipRequest.zipcode == zipcode).\
+                one()
 
-@app.route("/mlyelp/listzipcodes")
-def get_zipcodes():
-    zipcodes = pd.read_csv("zip_code_database.csv")
+        date1 = result[1]
+        date2 = datetime.now()
+        delta =  (date2 - date1).days
+        print(delta)
+        if delta > 7:
+            print("False: Date over 7 days !!!!")            
+            # Delete all rows in table for the zipcode requested, so if we need to run this a second time,
+            # we won't be trying to add duplicate data for the request
+            print("deleting zipCodes")
+            deleteZipCodesFromRestaturant(zipcode)
 
-    return zipcodes.to_json(orient="records")
+            # found zipcode but need to refresh. update new date and time to ziprequest
+            print(int(zipcode))
+            newdate = datetime.now()
+            print(newdate)
+
+            session.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
+                update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
+            session.commit()
+                
+            zipCodeFound = False
+        
+    except NoResultFound:
+        # New request.  date gets automatically populated the first time. 
+        zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
+        print(zp)
+        session.add(zp)
+        session.commit()
+        zipCodeFound = False
 
 
-# def foundZipcode(zipcode):
-#     result = session.query(Zipcodes). \
-#             filter(Zipcodes.zip == zipcode). \
-#             first()
-
-#     if result['lastrequestdate'] not None:
-#         date1 = datetime.strptime(result['lastrequestdate'], "%Y-%m-%d").date()
-#         date2 = datetime.strptime(datetime.now(), "%Y-%m-%d").date()
-#         delta =  (date2 - date1).days
-#         if delta > 7:
-#             return False
-#         else:
-#             return True
-#     else:
-#         return False
-
+    return zipCodeFound
     
 
-# def deleteZipCodesFromRestaturant(zipcode)
-#     rowcount = session.query(Restaurants).filter(Restaurants.zipcode == zipcode).\
-#         delete(synchronize_session=False)
-#     print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, zipcode))
+def get_zipcode_data(zipcode):
+    result = []
+    try:
+        result = session.query(Restaurant.address,\
+                            Restaurant.cuisine,\
+                            Restaurant.delivery,\
+                            Restaurant.image_url,\
+                            Restaurant.latitude,\
+                            Restaurant.longitude,\
+                            Restaurant.name,\
+                            Restaurant.phone,\
+                            Restaurant.price,\
+                            Restaurant.rating,\
+                            Restaurant.requestid,\
+                            Restaurant.reservations,\
+                            Restaurant.review_count,\
+                            Restaurant.zipcode).\
+                    filter(Restaurant.requestid == int(zipcode)).\
+                    all()
+
+        data = []
+        for r in result:
+            rest_dict = {
+                    'requestid': r.requestid,
+                    'name':r.name,
+                    'image_url': r.image_url,
+                    'review_count': r.review_count,
+                    'price': r.price,
+                    'zipcode': r.zipcode,
+                    'rating': float(r.rating),            
+                    'latitude': float(r.latitude),
+                    'longitude': float(r.longitude),
+                    'address': r.address,
+                    'phone': r.phone,
+                    'reservations': r.reservations,
+                    'delivery': r.delivery,
+                    'cuisine': r.cuisine
+                }
+            data.append(rest_dict)
+
+        print("zip code collected from DB!!!!")
+
+    except NoResultFound:
+        print("zip code no results !!!!")
+    return data
+
+def deleteZipCodesFromRestaturant(reqid):
+    rowcount = session.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
+        delete(synchronize_session=False)
+    session.commit()
+    print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, reqid))
 
 # Initiate the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
