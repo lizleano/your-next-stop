@@ -1,0 +1,32 @@
+{% extends 'main.html' %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+
+  <div class="container" id="main-section">
+    <div class="panel panel-default login-signup">
+      <div class="panel-heading">
+        <h1 class="panel-title">sign up</h1>
+      </div><!-- /.panel-heading -->
+      <div class="panel-body">
+        <form action="/signup" method="post">
+          <label for="email">Email address</label>
+          <input type="email" class="form-control" id="email" name="signup_email" placeholder="example@gmail.com" required autofocus>
+          <label for="password">Password</label>
+          <input type="password" class="form-control" id="password" name="signup_password" placeholder="**********" required>
+          <label for="firstname">First Name</label>
+          <input type="text" class="form-control" id="firstname" name="first_name" placeholder="First Name" required>
+          <label for="lastname">Last Name</label>
+          <input type="text" class="form-control" id="lastname" name="last_name" placeholder="Last Name" required>          
+          <button class="btn btn-lg btn-primary btn-block btn-homepage" type="submit"><span class="fa fa-user-plus" aria-hidden="true"></span> Signup</button>
+        </form>
+        <br>
+        <p>
+          Already have an account? <a href="/login">Login here</a>
+        </p>      
+      </div><!-- /.panel-body-->
+    </div><!-- /.panel -->
+  </div><!-- /.container -->
+
+{% endblock %}

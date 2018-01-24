@@ -1,0 +1,293 @@
+/* --------- BASE --------- */
+html {
+    min-height: 100%;
+    position: relative;
+}
+
+body {
+    margin-bottom: 70px; /* Margin bottom by footer height */
+    padding-top: 70px; /* Body padding required for fixed navbar */
+    font-family: 'Open Sans', sans-serif;
+}
+
+h1 {
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+h2, 
+h3,
+h4,
+h5 {
+    font-family: Lato, sans-serif;
+    text-transform: uppercase;
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* NAV BAR */
+.navbar {
+    min-height: 50px;
+    background-color: #FFFFFF;
+}
+
+#brand-logo {
+    border: none;
+    background-color: #FFFFFF;
+/*    border: solid 1px #FF9800;
+    background-color: #FF9800;*/
+    padding: 5px 10px 5px 7px;
+    color: #333333;
+    font-size: 16px;
+    font-family: 'Oleo Script', cursive;
+    margin-top: 7px;
+}
+
+.navbar-nav li, 
+.dropdown-menu li {
+    font-family: Lato, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.navbar-default .navbar-nav>li>a:focus, 
+.navbar-default .navbar-nav>li>a:hover {
+    text-decoration: none;
+    background-color: #f5f5f5;
+}
+
+#searchbox {
+    font-family: Lato, sans-serif;
+    font-size: 14px;
+    width: 275px;
+}
+
+/* FLASH MESSAGES */
+
+.flash-messages {
+    background-color: #263248;
+    margin-top: -20px;
+    padding: 10px;
+}
+
+/* CONTENT  */
+.jumbotron {
+    margin-top: -20px;
+}
+
+.jumbotron p {
+    font-size: 14px;
+}
+
+#main-section {
+    margin-bottom: 100px;
+}
+
+.search-results {
+    color: #FF9800;
+}
+
+/* FOOTER */
+.footer {
+    background-color: #263248;
+    bottom: 0;
+    color: #8DB0BE;
+    font-size: 12px;
+    height: 70px; /* Set the fixed height of the footer here */
+    padding-top: 10px;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+}
+
+.footer-copyright {
+    font-family: Lato, sans-serif;
+    text-transform: uppercase;
+}
+
+#heart {
+    color: #993333;
+}
+
+/* --------- HOMEPAGE --------- */
+#cover {
+    background-image: url("/static/img/silverware-on-table.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding-top: 200px;
+}
+
+#cover h1 {
+    color: #FFFFFF;
+}
+
+#cover .site-description {
+    color: #FFFFFF;
+    /*font-family: "Helvetica Neue", Helvetica, sans-serif;*/
+    font-size: 18px !important;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+#cover .indent {
+    margin-left: 20px;
+}
+
+.btn-homepage {
+    background-color: #FF9800;
+    border-color: #FF9800;
+    font-family: Lato, sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.btn-homepage:hover,
+.btn-homepage:active,
+.btn-homepage:focus {
+    background-color: #FF8100 !important;
+    border-color: #FF8100 !important;
+}
+
+#features-section {
+    margin-bottom: 100px;
+    margin-top: 0;
+    text-align: center;
+}
+
+#features-section h2 {
+    font-family: Lato, sans-serif;
+    text-transform: uppercase;
+}
+
+.features-icon {
+    color: #FF9800;
+    opacity: 0.6;
+}
+
+/* --------- LOGIN/SIGNUP --------- */
+
+.login-signup {
+    width: 300px;
+    margin: auto;
+}
+
+.panel-title {
+    font-size: 24px;
+    padding: 5px;
+}
+
+.panel-default>.panel-heading {
+    background-color: #263248;
+    border-color: #263248;
+    color: #FFFFFF;
+}
+
+.form-control {
+    margin-bottom: 15px;
+}
+
+#disclaimer {
+    font-size: 80%;
+}
+
+/* --------- USER PROFILE --------- */
+.top-header {
+    color: #FFFFFF;
+    background-color: #263248;
+    padding: 30px;
+}
+
+.top-header h1 {
+    font-size: 40px;
+}
+
+.user-stats {
+    margin-top: 10px;
+}
+
+.user-stats th,
+.user-stats td {
+    padding-right: 20px;
+}
+
+.stats-label {
+    color: #8DB0BE;
+    font-family: Lato, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.stats-value {
+    color: #FF9800;
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 24px;
+    /*font-weight: bold;*/
+}
+
+#action-box {
+    padding-top: 30px;
+}
+
+#member-since, #member-since-long {
+    position: absolute;
+    padding-top: 80px;
+    font-size: 10px;
+}
+
+#member-since-long {
+    padding-top: 114px;
+}
+
+#member-since-date {
+    color: #FF9800;
+}
+
+#restaurant-marker {
+    width: 14px;
+}
+
+.media-object {
+    width: 70px;
+}
+
+.media-body p {
+    font-size: 11px;
+    margin-bottom: 0;
+}
+
+#map {
+    border-radius: 0.75%;
+    height: 565px;
+}
+
+/* --------- RESULT PAGE --------- */
+.selection {
+    padding: 2px;
+    text-align: center;
+    vertical-align: center;
+}
+
+
+/* --------- RESTAURANT LIST --------- */
+
+#restaurant-list .list-group-item {
+    border-radius: 0;
+    border: 0;
+}
+
+#restaurant-list .media-body p {
+    font-size: 14px;
+}
+
+/* --------- RESTAURANT PROFILE --------- */
+#restaurant-profile-pic img {
+    width: 150px;
+}
+
+#user-profile-pic-sm img {
+    width: 100px;
+}
