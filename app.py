@@ -1,17 +1,20 @@
+import os
 import json, requests
 import csv
 import pandas as pd
 import numpy as np
+from random import shuffle
 from datetime import datetime
 
 # 
+from jinja2 import StrictUndefined
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine, func, literal_column
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, redirect, request, flash, session
 
 #################################################
 # Constants and Variables
@@ -54,13 +57,18 @@ print(Base.metadata.tables.keys())
 # Save reference to the table
 Restaurant = Base.classes.restaurants
 ZipRequest = Base.classes.ziprequests
+Search_Information = Base.classes.searchinformation
+Users = Base.classes.usersdb
+CuisineType = Base.classes.cuisinetype
 
-session = Session(engine)
+sessiondb = Session(engine)
 
 #################################################
 # Flask Setup
 #################################################
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "NoLimitData")
+app.jinja_env.undefined = StrictUndefined
 
 #################################################
 # Routes
@@ -69,7 +77,135 @@ app = Flask(__name__)
 @app.route("/")
 def default():
     # Default route to render landing page    
-    return render_template("index.html")
+    return render_template("home.html")
+
+@app.route("/login", methods=['GET'])
+def login():
+    # render login page    
+    return render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def login_post():
+    """Log user in if credentials provided are correct."""
+
+    login_email = request.form.get("login_email")
+    login_password = request.form.get("login_password")
+
+    try:
+        current_user = sessiondb.query(Users).filter(Users.email == login_email,
+                                                     Users.password == login_password).one()
+    except NoResultFound:
+        flash("The email or password you have entered did not match our records. Please try again.", "danger")
+        return redirect("/login")
+
+    # Get information of last search
+    # searchinfo = get_search_information(current_user.userid)
+
+    # Use a nested dictionary for session["current_user"] to store more than just user_id
+    session["current_user"] = {
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "userid": current_user.userid
+        # "lastsearchdate": searchinfo['lastsearchdate'],
+        # "cuisines": searchinfo['cuisine'],
+        # "zipcodes": searchinfo['zipcode']
+    }
+
+    flash("Welcome {}. You have successfully logged in.".format(current_user.first_name), "success")
+
+    return redirect("/requestpage")
+    # return redirect("/users/{}".format(current_user.user_id))
+
+@app.route("/logout")
+def logout():
+    """Log user out."""
+
+    del session["current_user"]
+
+    flash("Goodbye! You have successfully logged out.", "success")
+
+    return redirect("/")
+
+
+@app.route("/signup", methods=["GET"])
+def show_signup():
+    """Show signup form."""
+
+    return render_template("signup.html")
+
+
+@app.route("/signup", methods=["POST"])
+def signup():
+    """Check if user exists in database, otherwise add user to database."""
+
+    signup_email = request.form.get("signup_email")
+    signup_password = request.form.get("signup_password")
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    
+    try:
+        sessiondb.query(Users).filter(Users.email == signup_email).one()
+
+    except NoResultFound:
+        new_user = Users(email=signup_email,
+                        password=signup_password,
+                        first_name=first_name,
+                        last_name=last_name)
+        sessiondb.add(new_user)
+        sessiondb.commit()
+
+        # Add same info to session for new user as per /login route
+        session["current_user"] = {
+            "first_name": new_user.first_name,
+            "last_name": new_user.last_name,
+            "userid": new_user.userid
+        }
+
+        flash("You have succesfully signed up for an account, and you are now logged in.", "success")
+
+        return redirect("/requestpage")
+        # return redirect("/requestpage/%s" % new_user.userid)
+
+    flash("An account already exists with this email address. Please login.", "danger")
+
+    return redirect("/login")
+
+# @app.route("/requestpage/<userid>", methods=['GET'])
+# def requestpage(user_id):
+@app.route("/requestpage", methods=['GET'])
+def requestpage():
+    # get list of cuisine to show on drop down
+    cuisines = sessiondb.query(CuisineType.type, CuisineType.value).all()
+    # Default route to render request page    
+    return render_template("requestpage.html",cuisines=cuisines)
+
+@app.route("/requestpage", methods=['POST'])
+def requestpage_post():
+    print(request.form)
+
+    zipcode = request.form.get("zipcode")
+    results = get_restaurants(zipcode)
+
+    shuffle(results)
+    group1_results = results[:8]
+
+    shuffle(results)
+    group2_results = results[:8]
+
+    shuffle(results)
+    group3_results = results[:8]
+
+    # Default route to render request page    
+    return render_template("resultpage.html",restaurant_results1=group1_results,
+        restaurant_results2=group2_results,restaurant_results3=group3_results)
+
+
+@app.route("/machinelearning", methods=['GET'])
+def machinelearning():
+    # get searchinfo
+    searchinfo = sessiondb.query(Search_Information).all()
+    # Default route to render request page    
+    return render_template("machinelearning.html")
 
 # Request restaurants by zipcode
 @app.route("/mlyelp/search/<zipcode>", methods=['GET'])
@@ -93,11 +229,41 @@ def searchapi(zipcode,cuisine=None):
 #################################################
 # Functions
 #################################################
+def get_restaurants(zipcode,cuisine=None):
+    # print (zipcode)
+    # print(cuisine)
+    if cuisine is None:
+        cuisine = DEFAULT_CUISINE
+    # print (cuisine)
+
+    if findZipcode(zipcode):
+        # get data from DB
+        data = get_zipcode_data(zipcode)
+    else: 
+        # get new data from yelp
+        data = yelpsearch(cuisine, zipcode)
+
+    return data  
+
+def get_search_information(user_id):
+    try:
+        searchinfo = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).one()
+    except:
+        searchinfo = {
+            "lastsearchdate": datetime.strftime(datetime.now(), "%m/%d/%Y %H:%M:%S"),
+            "userid": user_id,
+            "cuisine": "",
+            "zipcode": ""
+        }
+    print(searchinfo)
+
+    return searchinfo
+
 def updateSQL(dataframe, location): 
     dataframe.to_sql(name='restaurants', con=engine, if_exists='append', index=False)
 
 
-def request(host, path, api_key, url_params=None):
+def searchrequest(host, path, api_key, url_params=None):
 #     send a GET request to the API.
 
 #     Args:
@@ -153,7 +319,7 @@ def yelpsearch(cuisine, location):
             'sort_by': SORT_BY
         }
         
-        response = request(API_HOST, SEARCH_PATH, ykey_access_token, url_params=url_params)
+        response = searchrequest(API_HOST, SEARCH_PATH, ykey_access_token, url_params=url_params)
 
         print("records returned: %s" % (len(response['businesses'])))
         addCtr = 0
@@ -188,6 +354,8 @@ def yelpsearch(cuisine, location):
                     'phone': business['display_phone'],
                     'reservations': reservations,
                     'delivery': delivery,
+                    'url': business['url'],
+                    'yelpid': business['id'],
                     'cuisine': business['categories'][0]['title']
                 }
                 
@@ -210,7 +378,7 @@ def findZipcode(zipcode):
     # print(ZipRequest.__table__.columns)
     zipCodeFound = True
     try:
-        result = session.query(ZipRequest.requestid, ZipRequest.lastrequestdate).\
+        result = sessiondb.query(ZipRequest.requestid, ZipRequest.lastrequestdate).\
                 filter(ZipRequest.zipcode == zipcode).\
                 one()
 
@@ -230,9 +398,9 @@ def findZipcode(zipcode):
             newdate = datetime.now()
             print(newdate)
 
-            session.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
+            sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
                 update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
-            session.commit()
+            sessiondb.commit()
                 
             zipCodeFound = False
         
@@ -240,8 +408,8 @@ def findZipcode(zipcode):
         # New request.  date gets automatically populated the first time. 
         zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
         print(zp)
-        session.add(zp)
-        session.commit()
+        sessiondb.add(zp)
+        sessiondb.commit()
         zipCodeFound = False
 
 
@@ -251,7 +419,7 @@ def findZipcode(zipcode):
 def get_zipcode_data(zipcode):
     result = []
     try:
-        result = session.query(Restaurant.address,\
+        result = sessiondb.query(Restaurant.address,\
                             Restaurant.cuisine,\
                             Restaurant.delivery,\
                             Restaurant.image_url,\
@@ -264,6 +432,8 @@ def get_zipcode_data(zipcode):
                             Restaurant.requestid,\
                             Restaurant.reservations,\
                             Restaurant.review_count,\
+                            Restaurant.url,\
+                            Restaurant.yelpid,\
                             Restaurant.zipcode).\
                     filter(Restaurant.requestid == int(zipcode)).\
                     all()
@@ -284,7 +454,9 @@ def get_zipcode_data(zipcode):
                     'phone': r.phone,
                     'reservations': r.reservations,
                     'delivery': r.delivery,
-                    'cuisine': r.cuisine
+                    'cuisine': r.cuisine,
+                    'yelpid': r.yelpid,
+                    'url': r.url
                 }
             data.append(rest_dict)
 
@@ -295,9 +467,9 @@ def get_zipcode_data(zipcode):
     return data
 
 def deleteZipCodesFromRestaturant(reqid):
-    rowcount = session.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
+    rowcount = sessiondb.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
         delete(synchronize_session=False)
-    session.commit()
+    sessiondb.commit()
     print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, reqid))
 
 # Initiate the Flask app
