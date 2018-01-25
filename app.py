@@ -44,9 +44,10 @@ newOffset = 0
 # MySQL Setup
 #################################################
 
-DB_CONN_URI_DEFAULT= "mysql://nchwjnkppsn6j4vj:s23q3vtsg2c0a4sv@o3iyl77734b9n3tg.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zx309qzs0npjpbew"
+DB_CONN_URI_DEFAULT= "mysql://nchwjnkppsn6j4vj:s23q3vtsg2c0a4sv@o3iyl77734b9n3tg.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zx309qzs0npjpbew?charset=utf8"
 
 engine = create_engine(DB_CONN_URI_DEFAULT)
+
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -63,12 +64,16 @@ CuisineType = Base.classes.cuisinetype
 
 sessiondb = Session(engine)
 
+
 #################################################
 # Flask Setup
 #################################################
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "NoLimitData")
 app.jinja_env.undefined = StrictUndefined
+
+from raven.contrib.flask import Sentry
+sentry = Sentry(app)
 
 #################################################
 # Routes
@@ -78,6 +83,8 @@ app.jinja_env.undefined = StrictUndefined
 def default():
     # Default route to render landing page    
     return render_template("home.html")
+
+# LOGIN
 
 @app.route("/login", methods=['GET'])
 def login():
@@ -116,6 +123,8 @@ def login_post():
     return redirect("/requestpage")
     # return redirect("/users/{}".format(current_user.user_id))
 
+#  LOGOUT
+
 @app.route("/logout")
 def logout():
     """Log user out."""
@@ -126,16 +135,17 @@ def logout():
 
     return redirect("/")
 
+#  SIGNUP
 
 @app.route("/signup", methods=["GET"])
-def show_signup():
+def signup():
     """Show signup form."""
 
     return render_template("signup.html")
 
 
 @app.route("/signup", methods=["POST"])
-def signup():
+def signup_post():
     """Check if user exists in database, otherwise add user to database."""
 
     signup_email = request.form.get("signup_email")
@@ -170,78 +180,146 @@ def signup():
 
     return redirect("/login")
 
-# @app.route("/requestpage/<userid>", methods=['GET'])
-# def requestpage(user_id):
+#  REQUEST PAGE
 @app.route("/requestpage", methods=['GET'])
 def requestpage():
     # get list of cuisine to show on drop down
-    cuisines = sessiondb.query(CuisineType.type, CuisineType.value).all()
+    cuisines = get_default_cuisines()
+
     # Default route to render request page    
-    return render_template("requestpage.html",cuisines=cuisines)
+    return render_template("requestpage.html",cuisines=cuisines,sizeofcuisine=len(cuisines))
 
 @app.route("/requestpage", methods=['POST'])
 def requestpage_post():
     print(request.form)
+    print(session['current_user'])
 
     zipcode = request.form.get("zipcode")
-    results = get_restaurants(zipcode)
+    if (request.form.get('cuisine')):
+        cuisines=request.form.getlist('cuisine')
+        results = get_restaurants(zipcode, cuisines)
+    else:
+        results = get_restaurants(zipcode)
 
     shuffle(results)
+    # if len(results) < 8:
     group1_results = results[:8]
 
     shuffle(results)
+    # if len(results) >= 8:
     group2_results = results[:8]
 
     shuffle(results)
+    # if len(results) >= 16:
     group3_results = results[:8]
 
-    # Default route to render request page    
+    # Default route to render result page    
     return render_template("resultpage.html",restaurant_results1=group1_results,
         restaurant_results2=group2_results,restaurant_results3=group3_results)
 
+# RESULT PAGE
+@app.route("/resultpage", methods=['POST'])
+def resultpage_post():
+    # alert("Just posted result page")
+    
+    print(request.form)
+    print(request.POST.getall('yelpid'))
+    print(session['current_user'])
+
+    # call function to populate database
+
+
+    # Default route to render machine learning page    
+    return render_template("machinelearning.html")
+
+# MACHINE LEARNING PAGE 
 
 @app.route("/machinelearning", methods=['GET'])
 def machinelearning():
-    # get searchinfo
+    
+    #  call function to do machine learning
     searchinfo = sessiondb.query(Search_Information).all()
     # Default route to render request page    
     return render_template("machinelearning.html")
 
+@app.route("/machinelearning", methods=['POST'])
+def machinelearning_post():
+    # read form
+    print(request.form)
+    print(request.POST.getall('yelpid'))
+
+    alert(request.form)
+
+    # Default route to render request page    
+    return render_template("machinelearning.html")
+
+
 # Request restaurants by zipcode
 @app.route("/mlyelp/search/<zipcode>", methods=['GET'])
-@app.route("/mlyelp/search/<zipcode>/<cuisine>", methods=['GET'])
-def searchapi(zipcode,cuisine=None):
-    # print (zipcode)
-    # print(cuisine)
-    if cuisine is None:
-        cuisine = DEFAULT_CUISINE
-    # print (cuisine)
+@app.route("/mlyelp/search/<zipcode>/<cuisines>", methods=['GET'])
+def searchapi(zipcode,cuisines=None):
+    if cuisines is None:
+        cuisines = get_default_cuisines()
+    else:
+        cuisines = ",".join(cuisines)
 
-    if findZipcode(zipcode):
-        # get data from DB
-        data = get_zipcode_data(zipcode)
-    else: 
-        # get new data from yelp
-        data = yelpsearch(cuisine, zipcode)
+    # if findZipcode(zipcode):
+    #     # get data from DB
+    #     data = get_zipcode_data(zipcode, cuisines)
+    # else: 
+    #     # get new data from yelp
+    #     data = yelpsearch(cuisines, zipcode)
+
+    if not findZipcode(zipcode):
+        # always populate data with all cuisines in table
+        data = yelpsearch(get_default_cuisines(), zipcode)
+
+    # get data from DB
+    # filter data using cuisines
+    data = get_zipcode_data(zipcode, cuisines)
 
     return jsonify(data)   
 
 #################################################
 # Functions
 #################################################
-def get_restaurants(zipcode,cuisine=None):
-    # print (zipcode)
-    # print(cuisine)
-    if cuisine is None:
-        cuisine = DEFAULT_CUISINE
-    # print (cuisine)
+def get_default_cuisines():
+    # get list of cuisine to show on drop down    
+    cuisines = sessiondb.query(CuisineType.type, CuisineType.value).all()    
+    return cuisines
 
-    if findZipcode(zipcode):
-        # get data from DB
-        data = get_zipcode_data(zipcode)
-    else: 
-        # get new data from yelp
-        data = yelpsearch(cuisine, zipcode)
+def get_restaurants(zipcode,cuisines=None):
+    if cuisines is None:
+        cuisines = get_default_cuisines()
+        defaultcuisines = []
+        for c in cuisines:
+            defaultcuisines.append(c[0])
+        cuisines = defaultcuisines
+
+    cuisines = ",".join(cuisines)
+    print(cuisines)
+
+    if not findZipcode(zipcode):
+        # always populate data with all cuisines in table
+        data = yelpsearch(get_default_cuisines(), zipcode)
+        if (len(data) > 0):
+            # New request.  date gets automatically populated the first time. 
+            zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
+            sessiondb.add(zp)
+            sessiondb.commit()
+            zipCodeFound = False
+    else:
+        print(int(zipcode))
+        newdate = datetime.now()
+        print(newdate)
+
+        sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
+            update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
+        sessiondb.commit()   
+
+    # get data from DB
+    # filter data using cuisines
+    data = get_zipcode_data(zipcode, cuisines)
 
     return data  
 
@@ -292,14 +370,14 @@ def searchrequest(host, path, api_key, url_params=None):
 
 
 # Query the Search API by a search term and location.
-def yelpsearch(cuisine, location):
+def yelpsearch(cuisines, location):
     # Args:         
     #     categories (str separated by comma) The types of cuisine passed to the API
     #     location (str separated by comma): The zipcodes passed to the API.
 
     # Returns:
     #     list of restaurants
-    
+    cuisines = ",".join(['%s' % (c[1]) for c in cuisines])
     restaurants = []
     for i in range(10):
         if i == 0:
@@ -307,17 +385,21 @@ def yelpsearch(cuisine, location):
         else:
             newOffset = i*SEARCH_LIMIT
             print ("offset: %s   limit: %s" % (newOffset, SEARCH_LIMIT))
+
+        
             
         # data = yelpsearch(DEFAULT_TERM, zipcodes, newOffset)
         url_params = {
             # term (str): The search term passed to the API. In our case, restaurants
             'term': DEFAULT_TERM,
-            # 'categories': cuisine,
+            'categories': cuisines,
             'location': location,
             'limit': SEARCH_LIMIT,
             'offset': newOffset,
             'sort_by': SORT_BY
         }
+
+        print(url_params)
         
         response = searchrequest(API_HOST, SEARCH_PATH, ykey_access_token, url_params=url_params)
 
@@ -325,20 +407,22 @@ def yelpsearch(cuisine, location):
         addCtr = 0
         # if (len(response['businesses'] > 0)):
         for business in response['businesses']:
-            # print(business['name'])
             try:
                 reservations = False               
 
                 if 'restaurant_reservation' in business['transactions']:
                     reservations=True
                     
-                delivery = True    
-                i, = np.where( business['transactions']=='delivery' )
-                if i >= 0:
+                delivery = False   
+                if 'delivery'  in business['transactions']:
                     delivery = True
                 
                 lat = business['coordinates']['latitude']
                 lng = business['coordinates']['longitude']
+
+                for c in business['categories']:
+                    if c['alias'] in cuisines:
+                        foundcuisine = c['title']
 
                 rest_dict = {
                     'requestid': location,
@@ -356,12 +440,12 @@ def yelpsearch(cuisine, location):
                     'delivery': delivery,
                     'url': business['url'],
                     'yelpid': business['id'],
-                    'cuisine': business['categories'][0]['title']
+                    'cuisine': foundcuisine
                 }
-                
+                # print(rest_dict)
                 restaurants.append(rest_dict)
             except:
-                # print("error!!!!!")
+                print("error!!!!!")
                 pass
     
     df = pd.DataFrame(restaurants)
@@ -385,7 +469,6 @@ def findZipcode(zipcode):
         date1 = result[1]
         date2 = datetime.now()
         delta =  (date2 - date1).days
-        print(delta)
         if delta > 7:
             print("False: Date over 7 days !!!!")            
             # Delete all rows in table for the zipcode requested, so if we need to run this a second time,
@@ -393,30 +476,32 @@ def findZipcode(zipcode):
             print("deleting zipCodes")
             deleteZipCodesFromRestaturant(zipcode)
 
-            # found zipcode but need to refresh. update new date and time to ziprequest
-            print(int(zipcode))
-            newdate = datetime.now()
-            print(newdate)
+            # # found zipcode but need to refresh. update new date and time to ziprequest
+            # print(int(zipcode))
+            # newdate = datetime.now()
+            # print(newdate)
 
-            sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
-                update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
-            sessiondb.commit()
+            # sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
+            #     update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
+            # sessiondb.commit()
                 
             zipCodeFound = False
         
     except NoResultFound:
-        # New request.  date gets automatically populated the first time. 
-        zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
-        print(zp)
-        sessiondb.add(zp)
-        sessiondb.commit()
+        # # New request.  date gets automatically populated the first time. 
+        # zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
+        # print(zp)
+        # sessiondb.add(zp)
+        # sessiondb.commit()
         zipCodeFound = False
 
 
     return zipCodeFound
     
 
-def get_zipcode_data(zipcode):
+def get_zipcode_data(zipcode,cuisines):
+    print (cuisines.split(','))
+    print (zipcode)
     result = []
     try:
         result = sessiondb.query(Restaurant.address,\
@@ -435,7 +520,7 @@ def get_zipcode_data(zipcode):
                             Restaurant.url,\
                             Restaurant.yelpid,\
                             Restaurant.zipcode).\
-                    filter(Restaurant.requestid == int(zipcode)).\
+                    filter(Restaurant.requestid == int(zipcode), Restaurant.cuisine.in_(cuisines.split(','))).\
                     all()
 
         data = []
@@ -473,5 +558,6 @@ def deleteZipCodesFromRestaturant(reqid):
     print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, reqid))
 
 # Initiate the Flask app
-if __name__ == '__main__':
+if __name__ == '__main__':    
     app.run(debug=True)
+    session.close()
