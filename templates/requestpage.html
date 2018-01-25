@@ -3,35 +3,46 @@
 {% block title %}Request Page{% endblock %}
 
 {% block content %}
-  <div class="container" id="main-section">      
-    <div class="panel panel-default requestpage">
-      <div class="panel-heading">
-        <h1 class="panel-title">Foodie Features</h1>
-      </div><!-- /.panel-heading -->
-      <div class="panel-body">
-        <form name="reqform" action="/requestpage" method="POST" onsubmit="return validateForm()">
-          <!-- <div class="form-group">
-              <label for="name">Your Name: </label>
-              <input type="text" class="form-control" id="name" name="name" required>
-          </div> -->                                      
-          <div class="form-group">
-              <label for="zipcode">Zip Code: </label>
-              <input type="text" class="form-control" id="zipcode" name="zipcode" required>
-          </div>
-          <div class="form-group">
-              <label for="CuisineDropdown" class="dropdownlabel">Cuisine: </label>
-              <select class="form-control dropdown" id="CuisineDropdown" name="cuisine" multiple="multiple" size={{ sizeofcuisine }}>
-                {% for cuisine in cuisines %}
-                   <option value="{{ cuisine.type }}">{{ cuisine.type }}</option>
-                {% endfor %}
-              </select>
-          </div>
-          <div class="form-group">
-              <button class="btn btn-primary btn-md btn-font" id="submit" value="submit" >Submit</button>
-          </div>
-        </form>
-      </div>                
+  <div class="container" id="main-section">
+    <div class="row">
+      <div class="col-md-4">
+        <figure>
+          <img src="/static/img/greek-food-1.jpg" alt="Food">
+        </figure> 
+      </div>      
+      <div class="col-md-8">
+        <div class="panel panel-default requestpage">
+          <div class="panel-heading">
+            <h1 class="panel-title">Foodie Features</h1>
+          </div><!-- /.panel-heading -->
+          <div class="panel-body">
+            <form name="reqform" action="/requestpage" method="POST" onsubmit="return validateForm()">
+              <!-- <div class="form-group">
+                  <label for="name">Your Name: </label>
+                  <input type="text" class="form-control" id="name" name="name" required>
+              </div> -->                                      
+              <div class="form-group">
+                  <label for="zipcode">Zip Code: </label>
+                  <input type="text" class="form-control" id="zipcode" name="zipcode" required>
+              </div>
+              <div class="form-group">
+                  <label for="CuisineDropdown" class="dropdownlabel">Cuisine: </label>
+                  <select class="form-control dropdown" id="CuisineDropdown" name="cuisine" multiple="multiple" size={{ sizeofcuisine }}>
+                    {% for cuisine in cuisines %}
+                       <option value="{{ cuisine.type }}">{{ cuisine.type }}</option>
+                    {% endfor %}
+                  </select>
+              </div>
+              <div class="form-group">              
+                  <button class="btn btn-primary btn-md btn-homepage" type="submit"><span class="fa fa-cutlery" aria-hidden="true"></span> Submit</button>
+              </div>
+            </form>
+          </div>                
+        </div>
+      </div>
     </div>
+       
+    
   </div>
 {% endblock %}
 

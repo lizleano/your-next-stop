@@ -11,7 +11,8 @@
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
 
   <!-- Custom styles -->
-  <link href="/static/css/styles.css" rel="stylesheet">
+  <link href="../static/css/styles.css" rel="stylesheet">
+  <link href="../static/css/theme-color/default-theme.css" rel="stylesheet">
 
   <!-- Font Awesome icons -->
   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
@@ -20,7 +21,6 @@
   <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=Oleo+Script' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
-
   
 </head>
 
@@ -46,6 +46,8 @@
         {% if session.get('current_user') %}          
           <ul class="nav navbar-nav navbar-right">
             <li><a href="/"><span class="fa fa-home" aria-hidden="true"></span> Home</a></li>
+            <li><a href="/team"><span class="fa fa-users" aria-hidden="true"></span> Team</a></li>
+            <li><a href="/about"><span class="fa fa-info-circle" aria-hidden="true"></span> About Us</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="fa fa-user" aria-hidden="true"></span>

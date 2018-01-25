@@ -201,17 +201,10 @@ def requestpage_post():
     else:
         results = get_restaurants(zipcode)
 
-    shuffle(results)
-    # if len(results) < 8:
-    group1_results = results[:8]
+    group1_results = get_shuffled_results(8, results)
+    group2_results = get_shuffled_results(8, results)
+    group3_results = get_shuffled_results(8, results)
 
-    shuffle(results)
-    # if len(results) >= 8:
-    group2_results = results[:8]
-
-    shuffle(results)
-    # if len(results) >= 16:
-    group3_results = results[:8]
 
     # Default route to render result page    
     return render_template("resultpage.html",restaurant_results1=group1_results,
@@ -220,38 +213,53 @@ def requestpage_post():
 # RESULT PAGE
 @app.route("/resultpage", methods=['POST'])
 def resultpage_post():
-    # alert("Just posted result page")
+    print("Just posted result page")
     
-    print(request.form)
-    print(request.POST.getall('yelpid'))
+    print(request.form.getlist)
     print(session['current_user'])
+    print(session['current_user']['userid'])
+
+    selection1=None
+    selection2=None
+    selection3=None
+
+    if (request.form.get('group1_selection')):
+        selection1=request.form.getlist('group1_selection')
+    if (request.form.get('group2_selection')):
+        selection2=request.form.getlist('group2_selection')
+    if (request.form.get('group3_selection')):
+        selection3=request.form.getlist('group3_selection')
+
 
     # call function to populate database
-
+    updateSelectedInformation(session['current_user']['userid'], selection1, selection2, selection3)
 
     # Default route to render machine learning page    
-    return render_template("machinelearning.html")
+    # return redirect("/machinelearning/%s" % session['current_user']['userid'])
+    return redirect("/machinelearning")
 
 # MACHINE LEARNING PAGE 
-
 @app.route("/machinelearning", methods=['GET'])
-def machinelearning():
-    
+def machinelearning():    
     #  call function to do machine learning
-    searchinfo = sessiondb.query(Search_Information).all()
+    print("User id profile: %s" % session['current_user']['userid'])
+    searchinfo = sessiondb.query(Search_Information).filter(Search_Information.userid == session['current_user']['userid']).\
+            order_by(Search_Information.lastsearchdate).all()
     # Default route to render request page    
-    return render_template("machinelearning.html")
+    return render_template("machinelearning.html", searchinfo=searchinfo)
 
 @app.route("/machinelearning", methods=['POST'])
-def machinelearning_post():
-    # read form
-    print(request.form)
-    print(request.POST.getall('yelpid'))
-
-    alert(request.form)
-
+def machinelearning_post():      
     # Default route to render request page    
     return render_template("machinelearning.html")
+
+@app.route("/team", methods=['GET'])
+def team():    
+    return render_template("team.html")
+
+@app.route("/about", methods=['GET'])
+def about():    
+    return render_template("about.html") 
 
 
 # Request restaurants by zipcode
@@ -283,6 +291,53 @@ def searchapi(zipcode,cuisines=None):
 #################################################
 # Functions
 #################################################
+def deleteZipCodesFromRestaturant(reqid):
+    rowcount = sessiondb.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
+        delete(synchronize_session=False)
+    sessiondb.commit()
+    print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, reqid))
+
+def findZipcode(zipcode):
+    # print(ZipRequest.__table__.columns)
+    zipCodeFound = True
+    try:
+        result = sessiondb.query(ZipRequest.requestid, ZipRequest.lastrequestdate).\
+                filter(ZipRequest.zipcode == zipcode).\
+                one()
+
+        date1 = result[1]
+        date2 = datetime.now()
+        delta =  (date2 - date1).days
+        if delta > 7:
+            print("False: Date over 7 days !!!!")            
+            # Delete all rows in table for the zipcode requested, so if we need to run this a second time,
+            # we won't be trying to add duplicate data for the request
+            print("deleting zipCodes")
+            deleteZipCodesFromRestaturant(zipcode)
+
+            # # found zipcode but need to refresh. update new date and time to ziprequest
+            # print(int(zipcode))
+            # newdate = datetime.now()
+            # print(newdate)
+
+            # sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
+            #     update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
+            # sessiondb.commit()
+                
+            zipCodeFound = False
+        
+    except NoResultFound:
+        # # New request.  date gets automatically populated the first time. 
+        # zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
+        # print(zp)
+        # sessiondb.add(zp)
+        # sessiondb.commit()
+        zipCodeFound = False
+
+
+    return zipCodeFound
+
+
 def get_default_cuisines():
     # get list of cuisine to show on drop down    
     cuisines = sessiondb.query(CuisineType.type, CuisineType.value).all()    
@@ -337,8 +392,71 @@ def get_search_information(user_id):
 
     return searchinfo
 
-def updateSQL(dataframe, location): 
-    dataframe.to_sql(name='restaurants', con=engine, if_exists='append', index=False)
+def get_shuffled_results(numberofrecords, results):
+    shuffle(results)
+    # if len(results) < 8:
+    return results[:8]
+
+
+def get_zipcode_data(zipcode,cuisines):
+    result = []
+    try:
+        result = sessiondb.query(Restaurant.address,\
+                            Restaurant.cuisine,\
+                            Restaurant.delivery,\
+                            Restaurant.image_url,\
+                            Restaurant.latitude,\
+                            Restaurant.longitude,\
+                            Restaurant.name,\
+                            Restaurant.phone,\
+                            Restaurant.price,\
+                            Restaurant.rating,\
+                            Restaurant.requestid,\
+                            Restaurant.reservations,\
+                            Restaurant.review_count,\
+                            Restaurant.url,\
+                            Restaurant.yelpid,\
+                            Restaurant.zipcode).\
+                    filter(Restaurant.requestid == int(zipcode), Restaurant.cuisine.in_(cuisines.split(','))).\
+                    all()
+
+        data = []
+        for r in result:
+            transactions = []
+            if r.reservations:
+                transactions.append("Reservations")
+
+            if r.delivery:
+                transactions.append("Delivery")      
+
+
+
+            rest_dict = {
+                    'requestid': r.requestid,
+                    'name':r.name,
+                    'image_url': r.image_url,
+                    'review_count': r.review_count,
+                    'price': r.price,
+                    'zipcode': r.zipcode,
+                    'rating': float(r.rating),            
+                    'latitude': float(r.latitude),
+                    'longitude': float(r.longitude),
+                    'address': r.address,
+                    'phone': r.phone,
+                    'reservations': r.reservations,
+                    'delivery': r.delivery,
+                    'cuisine': r.cuisine,
+                    'yelpid': r.yelpid,
+                    'url': r.url,
+                    'transactions': transactions
+                }
+            data.append(rest_dict)
+
+        print("zip code collected from DB!!!!")
+
+    except NoResultFound:
+        print("zip code no results !!!!")
+    return data
 
 
 def searchrequest(host, path, api_key, url_params=None):
@@ -368,6 +486,46 @@ def searchrequest(host, path, api_key, url_params=None):
         
     return response.json()
 
+def updateSelectedInformation(user_id, selection1, selection2, selection3):
+    if selection1 is not None:
+        for s in selection1:
+            addSelectedInformation(user_id, s)       
+
+    if selection2 is not None:
+        for s in selection2:
+            addSelectedInformation(user_id, s)  
+
+    if selection3 is not None:
+        for s in selection3:
+            addSelectedInformation(user_id, s)  
+
+def addSelectedInformation(user_id, yelpid):
+    try:
+        r = sessiondb.query(Restaurant).\
+                    filter(Restaurant.yelpid == yelpid).\
+                    first()
+
+    except NoResultFound:
+        print("Restaurant %s not found !!!!" % yelpid)
+        return False
+
+    
+    # add selected restaurant to table
+    si = Search_Information(userid=user_id, 
+                    cuisine=r.cuisine,
+                    zipcode=r.zipcode,
+                    yelpid=yelpid,
+                    rating=r.rating,
+                    price=r.price,
+                    delivery=r.delivery,
+                    reservations=r.reservations)
+    sessiondb.add(si)
+    sessiondb.commit()
+
+
+def updateSQL(dataframe, location): 
+    dataframe.to_sql(name='restaurants', con=engine, if_exists='append', index=False)
+
 
 # Query the Search API by a search term and location.
 def yelpsearch(cuisines, location):
@@ -384,7 +542,7 @@ def yelpsearch(cuisines, location):
             newOffset = 0
         else:
             newOffset = i*SEARCH_LIMIT
-            print ("offset: %s   limit: %s" % (newOffset, SEARCH_LIMIT))
+            # print ("offset: %s   limit: %s" % (newOffset, SEARCH_LIMIT))
 
         
             
@@ -458,104 +616,6 @@ def yelpsearch(cuisines, location):
 
 
 
-def findZipcode(zipcode):
-    # print(ZipRequest.__table__.columns)
-    zipCodeFound = True
-    try:
-        result = sessiondb.query(ZipRequest.requestid, ZipRequest.lastrequestdate).\
-                filter(ZipRequest.zipcode == zipcode).\
-                one()
-
-        date1 = result[1]
-        date2 = datetime.now()
-        delta =  (date2 - date1).days
-        if delta > 7:
-            print("False: Date over 7 days !!!!")            
-            # Delete all rows in table for the zipcode requested, so if we need to run this a second time,
-            # we won't be trying to add duplicate data for the request
-            print("deleting zipCodes")
-            deleteZipCodesFromRestaturant(zipcode)
-
-            # # found zipcode but need to refresh. update new date and time to ziprequest
-            # print(int(zipcode))
-            # newdate = datetime.now()
-            # print(newdate)
-
-            # sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
-            #     update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
-            # sessiondb.commit()
-                
-            zipCodeFound = False
-        
-    except NoResultFound:
-        # # New request.  date gets automatically populated the first time. 
-        # zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
-        # print(zp)
-        # sessiondb.add(zp)
-        # sessiondb.commit()
-        zipCodeFound = False
-
-
-    return zipCodeFound
-    
-
-def get_zipcode_data(zipcode,cuisines):
-    print (cuisines.split(','))
-    print (zipcode)
-    result = []
-    try:
-        result = sessiondb.query(Restaurant.address,\
-                            Restaurant.cuisine,\
-                            Restaurant.delivery,\
-                            Restaurant.image_url,\
-                            Restaurant.latitude,\
-                            Restaurant.longitude,\
-                            Restaurant.name,\
-                            Restaurant.phone,\
-                            Restaurant.price,\
-                            Restaurant.rating,\
-                            Restaurant.requestid,\
-                            Restaurant.reservations,\
-                            Restaurant.review_count,\
-                            Restaurant.url,\
-                            Restaurant.yelpid,\
-                            Restaurant.zipcode).\
-                    filter(Restaurant.requestid == int(zipcode), Restaurant.cuisine.in_(cuisines.split(','))).\
-                    all()
-
-        data = []
-        for r in result:
-            rest_dict = {
-                    'requestid': r.requestid,
-                    'name':r.name,
-                    'image_url': r.image_url,
-                    'review_count': r.review_count,
-                    'price': r.price,
-                    'zipcode': r.zipcode,
-                    'rating': float(r.rating),            
-                    'latitude': float(r.latitude),
-                    'longitude': float(r.longitude),
-                    'address': r.address,
-                    'phone': r.phone,
-                    'reservations': r.reservations,
-                    'delivery': r.delivery,
-                    'cuisine': r.cuisine,
-                    'yelpid': r.yelpid,
-                    'url': r.url
-                }
-            data.append(rest_dict)
-
-        print("zip code collected from DB!!!!")
-
-    except NoResultFound:
-        print("zip code no results !!!!")
-    return data
-
-def deleteZipCodesFromRestaturant(reqid):
-    rowcount = sessiondb.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
-        delete(synchronize_session=False)
-    sessiondb.commit()
-    print('%s records deleted from Restaurants table with zipcode %s' % (rowcount, reqid))
 
 # Initiate the Flask app
 if __name__ == '__main__':    
