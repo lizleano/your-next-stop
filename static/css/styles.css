@@ -291,3 +291,19 @@ h3 {
 #user-profile-pic-sm img {
     width: 100px;
 }
+
+/* --------- TEAM --------- */
+#team-nav img {
+    width: 150px;
+    height: 150px;
+}
+
+#team-content ul{
+  list-style: none;
+}
+
+#team-content li{
+  display: inline;
+}
+
+
