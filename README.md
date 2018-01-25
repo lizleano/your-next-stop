@@ -33,4 +33,8 @@ Our algorithm will be built on previous answers and response, getting more accur
 - MySQL
 - Flask
 
+### Instructions: 
+- pip install raven
+- pip install blinker
+
 ### Project Links: 
