@@ -201,42 +201,39 @@ def requestpage_post():
     else:
         results = get_restaurants(zipcode)
 
-    group1_results = get_shuffled_results(8, results)
-    group2_results = get_shuffled_results(8, results)
-    group3_results = get_shuffled_results(8, results)
+    group1_results = get_shuffled_results(4, results)
+    group2_results = get_shuffled_results(4, results)
+    group3_results = get_shuffled_results(4, results)    
 
-
-    # Default route to render result page    
     return render_template("resultpage.html",restaurant_results1=group1_results,
         restaurant_results2=group2_results,restaurant_results3=group3_results)
 
 # RESULT PAGE
 @app.route("/resultpage", methods=['POST'])
 def resultpage_post():
-    print("Just posted result page")
-    
-    print(request.form.getlist)
-    print(session['current_user'])
-    print(session['current_user']['userid'])
+    user_id = session['current_user']['userid']
 
-    selection1=None
-    selection2=None
-    selection3=None
+    print("**** End posted result page ******")
 
-    if (request.form.get('group1_selection')):
-        selection1=request.form.getlist('group1_selection')
-    if (request.form.get('group2_selection')):
-        selection2=request.form.getlist('group2_selection')
-    if (request.form.get('group3_selection')):
-        selection3=request.form.getlist('group3_selection')
+    f = request.form
+    for key in f.keys():
+        for value in f.getlist(key):
+            yelpid = key.split("_")[1]
 
+            # for test purposes show the last one selected
+            if value=="1":
+                yelpid_the_one=yelpid
+                print("found the one")                    
+            print (key,value, yelpid)
+            addSelectedInformation(user_id, yelpid, int(value))
 
-    # call function to populate database with Like = true (selected)
-    updateLikeSelected(session['current_user']['userid'], selection1, selection2, selection3, 1)
+    if len(yelpid_the_one) > 0:
+        data_dict = get_restaurant_yelpid(yelpid_the_one)
+        print(data_dict)
 
     # Default route to render machine learning page    
     # return redirect("/machinelearning/%s" % session['current_user']['userid'])
-    return redirect("/machinelearning")
+    return render_template("machinelearning.html", restaurant=data_dict)
 
 # MACHINE LEARNING PAGE 
 @app.route("/machinelearning", methods=['GET'])
@@ -259,8 +256,7 @@ def team():
 
 @app.route("/about", methods=['GET'])
 def about():    
-    return render_template("about.html") 
-
+    return render_template("about.html")
 
 # Request users
 @app.route("/your-next-stop/users", methods=['GET'])
@@ -288,6 +284,31 @@ def restaurantapi(zipcode,cuisines=None):
 #################################################
 # Functions
 #################################################
+def addSelectedInformation(user_id, yelpid,like):
+    try:
+        r = sessiondb.query(Restaurant).\
+                    filter(Restaurant.yelpid == yelpid).\
+                    first()
+
+    except NoResultFound:
+        print("Restaurant %s not found !!!!" % yelpid)
+        return False
+
+    
+    # add selected restaurant to table
+    si = Search_Information(userid=user_id, 
+                    cuisine=r.cuisine,
+                    zipcode=r.zipcode,
+                    yelpid=yelpid,
+                    rating=r.rating,
+                    price=r.price,
+                    delivery=r.delivery,
+                    reservations=r.reservations,
+                    like=like,
+                    lastsearchdate=datetime.now())
+    sessiondb.add(si)
+    sessiondb.commit()
+
 def deleteZipCodesFromRestaturant(reqid):
     rowcount = sessiondb.query(Restaurant).filter(Restaurant.requestid == int(reqid)).\
         delete(synchronize_session=False)
@@ -373,7 +394,46 @@ def get_restaurants(zipcode,cuisines=None):
     # filter data using cuisines
     data = get_zipcode_data(zipcode, cuisines)
 
-    return data  
+    return data
+
+def get_restaurant_yelpid(yelpid):
+    try:
+        r = sessiondb.query(Restaurant).\
+                        filter(Restaurant.yelpid == yelpid).\
+                        first()
+
+        # for r in result:
+        transactions = []
+        if r.reservations:
+            transactions.append("Reservations")
+
+        if r.delivery:
+            transactions.append("Delivery")
+
+        data_dict = {
+                'requestid': r.requestid,
+                'name':r.name,
+                'image_url': r.image_url,
+                'review_count': r.review_count,
+                'price': r.price,
+                'zipcode': r.zipcode,
+                'rating': float(r.rating),            
+                'latitude': float(r.latitude),
+                'longitude': float(r.longitude),
+                'address': r.address,
+                'phone': r.phone,
+                'reservations': r.reservations,
+                'delivery': r.delivery,
+                'cuisine': r.cuisine,
+                'yelpid': r.yelpid,
+                'url': r.url,
+                'transactions': transactions
+            }
+    except:
+        data_dict={}
+        flash("No restaurant found for this id.  Try again.")
+
+    return data_dict 
 
 def get_search_information(user_id):
     if user_id is None:        
@@ -424,7 +484,7 @@ def get_users(user_id):
 def get_shuffled_results(numberofrecords, results):
     shuffle(results)
     # if len(results) < 8:
-    return results[:8]
+    return results[:numberofrecords]
 
 
 def get_zipcode_data(zipcode,cuisines):
@@ -512,43 +572,6 @@ def searchrequest(host, path, api_key, url_params=None):
     response = requests.request('GET', url=url, headers=headers, params=url_params)
         
     return response.json()
-
-def updateLikeSelected(user_id, selection1, selection2, selection3, like):
-    if selection1 is not None:
-        for s in selection1:
-            addSelectedInformation(user_id, s, like)     
-
-    if selection2 is not None:
-        for s in selection2:
-            addSelectedInformation(user_id, s, like)  
-
-    if selection3 is not None:
-        for s in selection3:
-            addSelectedInformation(user_id, s, like)  
-
-def addSelectedInformation(user_id, yelpid,like):
-    try:
-        r = sessiondb.query(Restaurant).\
-                    filter(Restaurant.yelpid == yelpid).\
-                    first()
-
-    except NoResultFound:
-        print("Restaurant %s not found !!!!" % yelpid)
-        return False
-
-    
-    # add selected restaurant to table
-    si = Search_Information(userid=user_id, 
-                    cuisine=r.cuisine,
-                    zipcode=r.zipcode,
-                    yelpid=yelpid,
-                    rating=r.rating,
-                    price=r.price,
-                    delivery=r.delivery,
-                    reservations=r.reservations,
-                    like=like)
-    sessiondb.add(si)
-    sessiondb.commit()
 
 
 def updateSQL(dataframe, location): 
