@@ -58,7 +58,7 @@ print(Base.metadata.tables.keys())
 # Save reference to the table
 Restaurant = Base.classes.restaurants
 ZipRequest = Base.classes.ziprequests
-Search_Information = Base.classes.searchinformation
+Search_Information = Base.classes.search_information
 Users = Base.classes.usersdb
 CuisineType = Base.classes.cuisinetype
 
@@ -231,8 +231,8 @@ def resultpage_post():
         selection3=request.form.getlist('group3_selection')
 
 
-    # call function to populate database
-    updateSelectedInformation(session['current_user']['userid'], selection1, selection2, selection3)
+    # call function to populate database with Like = true (selected)
+    updateLikeSelected(session['current_user']['userid'], selection1, selection2, selection3, 1)
 
     # Default route to render machine learning page    
     # return redirect("/machinelearning/%s" % session['current_user']['userid'])
@@ -262,30 +262,27 @@ def about():
     return render_template("about.html") 
 
 
-# Request restaurants by zipcode
-@app.route("/mlyelp/search/<zipcode>", methods=['GET'])
-@app.route("/mlyelp/search/<zipcode>/<cuisines>", methods=['GET'])
-def searchapi(zipcode,cuisines=None):
-    if cuisines is None:
-        cuisines = get_default_cuisines()
-    else:
-        cuisines = ",".join(cuisines)
+# Request users
+@app.route("/your-next-stop/users", methods=['GET'])
+@app.route("/your-next-stop/users/<userid>", methods=['GET'])
+def userapi(userid=None):
 
-    # if findZipcode(zipcode):
-    #     # get data from DB
-    #     data = get_zipcode_data(zipcode, cuisines)
-    # else: 
-    #     # get new data from yelp
-    #     data = yelpsearch(cuisines, zipcode)
+    data = get_users(userid)
+    return jsonify(data)
 
-    if not findZipcode(zipcode):
-        # always populate data with all cuisines in table
-        data = yelpsearch(get_default_cuisines(), zipcode)
+# Request searchinfo by userid
+@app.route("/your-next-stop/searchinfo", methods=['GET'])
+@app.route("/your-next-stop/searchinfo/<userid>", methods=['GET'])
+def searchinfoapi(userid=None):
 
-    # get data from DB
-    # filter data using cuisines
-    data = get_zipcode_data(zipcode, cuisines)
+    data = get_search_information(userid)
+    return jsonify(data)
 
+@app.route("/your-next-stop/restaurant/<zipcode>", methods=['GET'])
+@app.route("/your-next-stop/restaurant/<zipcode>/<cuisines>", methods=['GET'])
+def restaurantapi(zipcode,cuisines=None):
+
+    data = get_restaurants(zipcode, cuisines)
     return jsonify(data)   
 
 #################################################
@@ -379,18 +376,50 @@ def get_restaurants(zipcode,cuisines=None):
     return data  
 
 def get_search_information(user_id):
-    try:
-        searchinfo = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).one()
-    except:
-        searchinfo = {
-            "lastsearchdate": datetime.strftime(datetime.now(), "%m/%d/%Y %H:%M:%S"),
-            "userid": user_id,
-            "cuisine": "",
-            "zipcode": ""
+    if user_id is None:        
+        result = sessiondb.query(Search_Information).all()
+    else:
+        result = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).all()
+    
+    data = []
+    for r in result:
+        searchinfo_dict = {
+            'userid': r.userid,
+            'lastsearchdate':r.lastsearchdate,
+            'yelpid': r.yelpid,
+            'price': r.price,
+            'zipcode': r.zipcode,
+            'rating': float(r.rating),
+            'reservations': r.reservations,
+            'delivery': r.delivery,
+            'cuisine': r.cuisine,
+            'like': r.like
         }
-    print(searchinfo)
+        data.append(searchinfo_dict)
 
-    return searchinfo
+    print(data)
+
+    return data
+
+def get_users(user_id):
+    if user_id is None:        
+        result = sessiondb.query(Users).all()
+    else:
+        result = sessiondb.query(Users).filter(Users.userid == user_id).all()
+    
+    data = []
+    for r in result:
+        user_dict = {
+            'userid': r.userid,
+            'firstname':r.first_name,
+            'lastname': r.last_name,
+            'email': r.email
+        }
+        data.append(user_dict)
+
+    print(data)
+
+    return data
 
 def get_shuffled_results(numberofrecords, results):
     shuffle(results)
@@ -427,9 +456,7 @@ def get_zipcode_data(zipcode,cuisines):
                 transactions.append("Reservations")
 
             if r.delivery:
-                transactions.append("Delivery")      
-
-
+                transactions.append("Delivery")
 
             rest_dict = {
                     'requestid': r.requestid,
@@ -486,20 +513,20 @@ def searchrequest(host, path, api_key, url_params=None):
         
     return response.json()
 
-def updateSelectedInformation(user_id, selection1, selection2, selection3):
+def updateLikeSelected(user_id, selection1, selection2, selection3, like):
     if selection1 is not None:
         for s in selection1:
-            addSelectedInformation(user_id, s)       
+            addSelectedInformation(user_id, s, like)     
 
     if selection2 is not None:
         for s in selection2:
-            addSelectedInformation(user_id, s)  
+            addSelectedInformation(user_id, s, like)  
 
     if selection3 is not None:
         for s in selection3:
-            addSelectedInformation(user_id, s)  
+            addSelectedInformation(user_id, s, like)  
 
-def addSelectedInformation(user_id, yelpid):
+def addSelectedInformation(user_id, yelpid,like):
     try:
         r = sessiondb.query(Restaurant).\
                     filter(Restaurant.yelpid == yelpid).\
@@ -518,7 +545,8 @@ def addSelectedInformation(user_id, yelpid):
                     rating=r.rating,
                     price=r.price,
                     delivery=r.delivery,
-                    reservations=r.reservations)
+                    reservations=r.reservations,
+                    like=like)
     sessiondb.add(si)
     sessiondb.commit()
 
