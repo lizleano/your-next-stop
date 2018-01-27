@@ -275,13 +275,11 @@ h3 {
     vertical-align: center;
 }
 
-
 label.btn.btn-default.like.active{
   background-color: #FF9800;
   border-color: #FF9800;
   color: #FFFFFF;
 }
-
 
 /* --------- RESTAURANT LIST --------- */
 
@@ -317,6 +315,3 @@ label.btn.btn-default.like.active{
 .team-content li{
   display: inline;
 }
-
-
-
