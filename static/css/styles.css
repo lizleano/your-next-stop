@@ -275,7 +275,6 @@ h3 {
     vertical-align: center;
 }
 
-
 /* --------- RESTAURANT LIST --------- */
 
 #restaurant-list .list-group-item {
@@ -313,9 +312,10 @@ h3 {
 
 /* --------- RESULTS PAGE --------- */
 
-label.active{
+label.btn.btn-default.like.active {
   background-color: #FF9800;
   border-color: #FF9800;
+  color: white;
 }
 
 
