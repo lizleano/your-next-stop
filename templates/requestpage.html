@@ -5,6 +5,7 @@
 {% block content %}
   <div class="container" id="main-section">
     <div class="row">
+      <p id="error"></p>
       <div class="col-md-4">
         <div class="panel panel-default requestpage">
           <div class="panel-body">
@@ -30,7 +31,7 @@
                   <input type="text" class="form-control" id="zipcode" name="zipcode" required>
               </div>
               <div class="form-group">
-                  <label for="CuisineDropdown" class="dropdownlabel">Cuisine: </label>
+                  <label for="CuisineDropdown" class="dropdownlabel">Cuisine: (Ctrl+Click to select more than one cuisine)</label>
                   <select class="form-control dropdown" id="CuisineDropdown" name="cuisine" multiple="multiple" size={{ sizeofcuisine }}>
                     {% for cuisine in cuisines %}
                        <option value="{{ cuisine.type }}">{{ cuisine.type }}</option>
