@@ -4,9 +4,35 @@
 
 {% block content %}
 
-	<div class="container" id="main-section"> 
-		<h1>This is the result page after the processing of the machine learning is done</h1>
-	</div>
+	
+	<div class="container" id="main-section">
+      <h1>Your journey stops here!!!</h1>
+      <h2 text-center>{{restaurant.name}}</h2>
+      <div class="row">
+      	<div class="col-xs-12 col-md-6">
+            <a href="{{ restaurant.url }}" class="list-group-item">
+	            <div class="media">	                               
+	              <div class="media-left">
+	                {% if restaurant.image_url %}
+	                  <img class="media-object" src="{{ restaurant.image_url }}" alt="Image for {{ restaurant.name }}">
+	                {% else %}
+	                  <img class="media-object" src="http://placehold.it/100x100?text=No+Image+Available" alt="Image for {{ restaurant.name }}">
+	                {% endif %}
+	              </div><!-- /.media-left --> 
+	              <div class="media-body">
+	                <!-- <h3 class="media-heading">{{ restaurant.name }}</h3> -->
+	                <p>
+	                  {{ restaurant.cuisine }}<br>
+	                  <span class="glyphicon glyphicon-map-marker" aria-hidden="true"></span> {{ restaurant.address }}<br>
+	                  <span class="glyphicon glyphicon-earphone" aria-hidden="true"></span> {{ restaurant.phone }}
+	                </p>
+	              </div><!-- /.media-body -->  
+	            </div> 
+            </a>
+        </div><!-- /.col -->
+      </div><!-- /.row -->
+    </div><!-- /.container -->
+
 
 
 {% endblock %}

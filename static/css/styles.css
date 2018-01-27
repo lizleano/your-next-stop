@@ -112,6 +112,10 @@ h3 {
     color: #993333;
 }
 
+#foodpicture {
+    height: 100%;
+}
+
 /* --------- HOMEPAGE --------- */
 #cover {
     background-image: url("/static/img/silverware-on-table.jpg");
@@ -292,18 +296,29 @@ h3 {
     width: 100px;
 }
 
-/* --------- TEAM --------- */
-#team-nav img {
+/* --------- TEAM PAGE --------- */
+.single_image {
     width: 150px;
     height: 150px;
 }
 
-#team-content ul{
+.team-content ul{
   list-style: none;
 }
 
-#team-content li{
+.team-content li{
   display: inline;
 }
+
+
+/* --------- RESULTS PAGE --------- */
+
+label.active{
+  background-color: #FF9800;
+  border-color: #FF9800;
+}
+
+
+
 
 
