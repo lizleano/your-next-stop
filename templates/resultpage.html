@@ -1,13 +1,15 @@
 {% extends 'main.html' %}
 
-{% block title %}Restaurants: Select from 3 from each group {% endblock %}
+{% block title %}Restaurants {% endblock %}
 
 {% block content %}
   <div class="container" id="main-section">
-    <form name="resform" action="/resultpage" method="POST" onsubmit="return validateForm()">
-      <h1>Restaurants: Click Like or Dislike for each of the restaurants listed.</h1>              
-      <button class="btn btn-primary btn-md btn-homepage pull-right" id="surpriseme" type="submit"><span class="fa fa-cutlery" aria-hidden="true"></span> Surprise Me!</button>    
-      <h2>Group 1</h2>
+    <form name="resform" action="/resultpage" method="POST" onsubmit="return validateResForm()">
+      <input type="hidden" id="totalresults" value="{{ totalresults }}">
+      <h1>Evaluate each restaurant</h1>             
+      <button class="btn btn-primary btn-md btn-homepage pull-right" id="surpriseme" type="submit"><span class="fa fa-cutlery" aria-hidden="true"></span> Surprise Me!</button>
+      <p id="error"></p>   
+      <h3>Group 1</h3>
       {% if restaurant_results1 %}
         <div class="row">
           {% for restaurant in restaurant_results1 %}
@@ -62,7 +64,7 @@
 
       <hr>
       <!-- Group 2 -->
-      <h2>Group 2</h2>
+      <h3>Group 2</h3>
       {% if restaurant_results2 %}
         <div class="row">
           {% for restaurant in restaurant_results2 %}
@@ -119,7 +121,7 @@
 
       <hr>
       <!-- Group 3 -->
-      <h2>Group 3</h2>
+      <h3>Group 3</h3>
       {% if restaurant_results3 %}
         <div class="row">
           {% for restaurant in restaurant_results3 %}
@@ -180,5 +182,4 @@
 {% block javascript %}
   <script type='text/javascript' src='../static/js/resultpage.js'></script> 
   
-
 {% endblock %}

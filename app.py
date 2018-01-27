@@ -16,6 +16,15 @@ from sqlalchemy import create_engine, func, literal_column
 
 from flask import Flask, jsonify, render_template, redirect, request, flash, session
 
+# sklearn
+from sklearn import tree
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+# Use this to visualize the tree
+import graphviz 
+
 #################################################
 # Constants and Variables
 #################################################
@@ -203,17 +212,17 @@ def requestpage_post():
 
     group1_results = get_shuffled_results(4, results)
     group2_results = get_shuffled_results(4, results)
-    group3_results = get_shuffled_results(4, results)    
+    group3_results = get_shuffled_results(4, results)
+
+    totalresults = len(group1_results) + len(group1_results) + len(group1_results)   
 
     return render_template("resultpage.html",restaurant_results1=group1_results,
-        restaurant_results2=group2_results,restaurant_results3=group3_results)
+        restaurant_results2=group2_results,restaurant_results3=group3_results, totalresults=totalresults)
 
 # RESULT PAGE
 @app.route("/resultpage", methods=['POST'])
 def resultpage_post():
     user_id = session['current_user']['userid']
-
-    print("**** End posted result page ******")
 
     f = request.form
     for key in f.keys():
@@ -231,19 +240,31 @@ def resultpage_post():
         data_dict = get_restaurant_yelpid(yelpid_the_one)
         print(data_dict)
 
+    r2_all = ML_random_trees ()
+
+    print("User id profile: %s" % session['current_user']['userid'])
+    r2_user = ML_random_trees (session['current_user']['userid'])
+
+    r2 = {
+        "user": r2_user,
+        "all": r2_all
+    }
+
+    print(r2_all)
+    print(r2_user)
+
     # Default route to render machine learning page    
     # return redirect("/machinelearning/%s" % session['current_user']['userid'])
-    return render_template("machinelearning.html", restaurant=data_dict)
+    return render_template("machinelearning.html", restaurant=data_dict, r2=r2)
 
 # MACHINE LEARNING PAGE 
 @app.route("/machinelearning", methods=['GET'])
 def machinelearning():    
     #  call function to do machine learning
     print("User id profile: %s" % session['current_user']['userid'])
-    searchinfo = sessiondb.query(Search_Information).filter(Search_Information.userid == session['current_user']['userid']).\
-            order_by(Search_Information.lastsearchdate).all()
+    # clf_result, r2_result = ML_random_trees (session['current_user']['userid'])
     # Default route to render request page    
-    return render_template("machinelearning.html", searchinfo=searchinfo)
+    return render_template("machinelearning.html")#, r2=r2_result)
 
 @app.route("/machinelearning", methods=['POST'])
 def machinelearning_post():      
@@ -544,6 +565,73 @@ def get_zipcode_data(zipcode,cuisines):
     except NoResultFound:
         print("zip code no results !!!!")
     return data
+
+def ML_random_trees(user_id=None):
+    if (user_id==None):
+        results = sessiondb.query(Search_Information).all()
+    else:
+        results = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).all()
+
+
+    print(len(results))
+
+    data = []
+    for result in results:
+        restaurant = {            
+                'price': result.price,
+                'rating': float(result.rating),
+                'reservations': result.reservations,
+                'delivery': result.delivery,
+                'cuisine': result.cuisine,
+                'like': result.like
+        }
+
+        data.append(restaurant)
+    df = pd.DataFrame(data)
+
+    # label encode cuisine
+    # le = preprocessing.onehotencoder()
+    le = preprocessing.LabelEncoder()
+    le.fit(df['cuisine'])
+
+    le.classes_
+
+    cuisine_transformed = le.transform(df['cuisine'])
+    cuisine_transformed
+
+    # label encode price
+    le.fit(df['price'])
+
+    le.classes_
+
+    price_transformed = le.transform(df['price'])
+    price_transformed
+
+    df_new = pd.DataFrame({
+        'price': price_transformed,
+        'rating': df['rating'],
+        'reservations': df['reservations'],
+        'delivery': df['delivery'],
+        'cuisine': cuisine_transformed
+    })
+
+    target = df['like']
+    target_name = ['dislike','like']
+
+    feature_names = df_new.columns
+
+
+    # train data
+    X_train, X_test, y_train, y_test = train_test_split(df_new, target, random_state=40)
+
+    print("Shape: ", X_train.shape, y_train.shape)
+
+    rf = RandomForestClassifier(n_estimators=10)
+    rf = rf.fit(X_train, y_train)
+    r2 = rf.score(X_test, y_test)
+
+    return float(r2)
+
 
 
 def searchrequest(host, path, api_key, url_params=None):

@@ -276,6 +276,13 @@ h3 {
 }
 
 
+label.btn.btn-default.like.active{
+  background-color: #FF9800;
+  border-color: #FF9800;
+  color: #FFFFFF;
+}
+
+
 /* --------- RESTAURANT LIST --------- */
 
 #restaurant-list .list-group-item {
@@ -288,8 +295,9 @@ h3 {
 }
 
 /* --------- RESTAURANT PROFILE --------- */
-#restaurant-profile-pic img {
-    width: 150px;
+.restaurant-profile-pic img{
+    width: 200px;
+    height: 200px;
 }
 
 #user-profile-pic-sm img {
@@ -309,16 +317,6 @@ h3 {
 .team-content li{
   display: inline;
 }
-
-
-/* --------- RESULTS PAGE --------- */
-
-label.active{
-  background-color: #FF9800;
-  border-color: #FF9800;
-}
-
-
 
 
 
