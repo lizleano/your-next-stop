@@ -22,8 +22,6 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-# Use this to visualize the tree
-import graphviz 
 
 #################################################
 # Constants and Variables
