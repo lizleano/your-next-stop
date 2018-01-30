@@ -50,8 +50,9 @@ newOffset = 0
 # MySQL Setup
 #################################################
 
-key_pd = pd.read_csv("Keys.py")
-sqlkey = key_pd[key_pd['name'] == 'sqlkey']['key'].max().strip()
+# key_pd = pd.read_csv("Keys.py")
+# sqlkey = key_pd[key_pd['name'] == 'sqlkey']['key'].max().strip()
+# print(sqlkey)
 
 DB_CONN_URI_DEFAULT= sqlkey
 
