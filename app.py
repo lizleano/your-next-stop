@@ -18,11 +18,11 @@ from flask import Flask, jsonify, render_template, redirect, request, flash, ses
 
 # sklearn
 from sklearn import tree
-from sklearn import preprocessing
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-
+from keras.utils import to_categorical
 #################################################
 # Constants and Variables
 #################################################
@@ -51,7 +51,10 @@ newOffset = 0
 # MySQL Setup
 #################################################
 
-DB_CONN_URI_DEFAULT= "mysql://nchwjnkppsn6j4vj:s23q3vtsg2c0a4sv@o3iyl77734b9n3tg.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zx309qzs0npjpbew?charset=utf8"
+key_pd = pd.read_csv("Keys.py")
+sqlkey = key_pd[key_pd['name'] == 'sqlkey']['key'].max().strip()
+
+DB_CONN_URI_DEFAULT= sqlkey
 
 engine = create_engine(DB_CONN_URI_DEFAULT)
 
@@ -60,7 +63,7 @@ engine = create_engine(DB_CONN_URI_DEFAULT)
 Base = automap_base()
 # reflect the tables
 Base.prepare(engine, reflect=True)
-print(Base.metadata.tables.keys())
+# print(Base.metadata.tables.keys())
 
 # Save reference to the table
 Restaurant = Base.classes.restaurants
@@ -293,12 +296,21 @@ def searchinfoapi(userid=None):
     data = get_search_information(userid)
     return jsonify(data)
 
+
+# request restaurant by zipcode
 @app.route("/your-next-stop/restaurant/<zipcode>", methods=['GET'])
 @app.route("/your-next-stop/restaurant/<zipcode>/<cuisines>", methods=['GET'])
 def restaurantapi(zipcode,cuisines=None):
 
     data = get_restaurants(zipcode, cuisines)
+    return jsonify(data)
+
+# request restaurant by yelpid
+@app.route("/your-next-stop/restaurant/id/<yelpid>", methods=['GET'])
+def restaurantbyidapi(yelpid):
+    data = get_restaurant_yelpid(yelpid)
     return jsonify(data)   
+
 
 #################################################
 # Functions
@@ -576,12 +588,13 @@ def ML_random_trees(user_id=None):
     data = []
     for result in results:
         restaurant = {            
-                'price': result.price,
-                'rating': float(result.rating),
-                'reservations': result.reservations,
-                'delivery': result.delivery,
-                'cuisine': result.cuisine,
-                'like': result.like
+            'price': result.price,
+            'rating': float(result.rating),
+            'reservations': result.reservations,
+            'delivery': result.delivery,
+            'cuisine': result.cuisine,
+            'like': result.like,
+            'userid':result.userid
         }
 
         data.append(restaurant)
@@ -589,28 +602,56 @@ def ML_random_trees(user_id=None):
 
     # label encode cuisine
     # le = preprocessing.onehotencoder()
-    le = preprocessing.LabelEncoder()
+    le = LabelEncoder()
     le.fit(df['cuisine'])
-
-    le.classes_
-
     cuisine_transformed = le.transform(df['cuisine'])
-    cuisine_transformed
+    
+    # use onehot encoding for cuisine
+    one_hot_cuisine = to_categorical(cuisine_transformed)
+
+    # Adjusting one hot to fit df
+    chinese = []
+    french = []
+    greek = []
+    italian = []
+    japanese = []
+    korean = []
+    mediterranean = []
+    mexican = []
+    thai = []
+
+    for one_hot in one_hot_cuisine:
+        chinese.append(int(one_hot[0]))
+        french.append(int(one_hot[1]))
+        greek.append(int(one_hot[2]))
+        italian.append(int(one_hot[3]))
+        japanese.append(int(one_hot[4]))
+        korean.append(int(one_hot[5]))
+        mediterranean.append(int(one_hot[6]))
+        mexican.append(int(one_hot[7]))
+        thai.append(int(one_hot[8]))
 
     # label encode price
     le.fit(df['price'])
-
-    le.classes_
-
     price_transformed = le.transform(df['price'])
     price_transformed
 
+    # DataFrame with encoded values
     df_new = pd.DataFrame({
         'price': price_transformed,
         'rating': df['rating'],
         'reservations': df['reservations'],
         'delivery': df['delivery'],
-        'cuisine': cuisine_transformed
+        'chinese': chinese,
+        'french': french,
+        'greek': greek,
+        'italian': italian,
+        'japanese': japanese,
+        'korean': korean,
+        'mediterranean': mediterranean,
+        'mexican': mexican,
+        'thai': thai,
+        'userid': df['userid']
     })
 
     target = df['like']
@@ -618,11 +659,8 @@ def ML_random_trees(user_id=None):
 
     feature_names = df_new.columns
 
-
-    # train data
+    # train data to make r2 more meaningful
     X_train, X_test, y_train, y_test = train_test_split(df_new, target, random_state=40)
-
-    print("Shape: ", X_train.shape, y_train.shape)
 
     rf = RandomForestClassifier(n_estimators=10)
     rf = rf.fit(X_train, y_train)

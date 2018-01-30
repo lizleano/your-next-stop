@@ -6,33 +6,62 @@
 
 	
 	<div class="container" id="main-section">
-      <h1>Your journey stops here !!!</h1>
-      <h2 text-center>{{restaurant.name}}</h2>
+      <h1>YOUR NEXT STOP !!!</h1>
+      <h2 id="restaurantname">{{ restaurant.name }}</h2>
+      <input type="hidden" id=lat value="{{ restaurant.latitude }}">
+      <input type="hidden" id=lng value="{{ restaurant.longitude }}">
+      <input type="hidden" id=yelpid value="{{ restaurant.yelpid }}">
       <div class="row">
       	<div class="col-xs-12 col-md-6">
-            <a href="{{ restaurant.url }}" class="list-group-item">
-	            <div class="media">	                               
-	              <div class="media-left restaurant-profile-pic">
-	                {% if restaurant.image_url %}
-	                  <img  src="{{ restaurant.image_url }}" alt="Image for {{ restaurant.name }}">
-	                {% else %}
-	                  <img src="http://placehold.it/100x100?text=No+Image+Available" alt="Image for {{ restaurant.name }}">
-	                {% endif %}
-	              </div><!-- /.media-left --> 
-	              <div class="media-body">
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<a href="{{ restaurant.url }}" class="list-group-item restaurant-profile-pic">
+		              <div class="text-center">
+		                {% if restaurant.image_url %}
+		                  <img  src="{{ restaurant.image_url }}" alt="Image for {{ restaurant.name }}">
+		                {% else %}
+		                  <img src="http://placehold.it/100x100?text=No+Image+Available" alt="Image for {{ restaurant.name }}">
+		                {% endif %}
+		              </div>
+		            </a>
+				</div>
+				<div class="panel-footer">
 	                <!-- <h3 class="media-heading">{{ restaurant.name }}</h3> -->
 	                <p>
 	                  {{ restaurant.cuisine }}<br>
 	                  <span class="glyphicon glyphicon-map-marker labels" aria-hidden="true"></span> {{ restaurant.address }}<br>
 	                  <span class="glyphicon glyphicon-earphone" aria-hidden="true"></span> {{ restaurant.phone }}
 	                </p>
-	              </div><!-- /.media-body -->  
-	            </div> 
-            </a>            
-        </div><!-- /.col -->
+                </div><!-- /.media-body --> 
+			</div>
+        </div>
+
+<!-- MAP -->
+      	<!-- <div class="col-xs-12 col-md-6">
+			<div>
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<div id="map"></div>
+					</div>
+				</div>
+			</div>
+
+        </div> -->
       </div><!-- /.row -->
     </div><!-- /.container -->
 
 
 
+{% endblock %}
+
+
+{% block javascript %}	
+	<!-- <script src="../static/js/restaurantMarker.js"></script>
+	<script>
+	// $(function(){
+	 	alert($('#restaurantname').val() + ": " + $('#lat').val() + " " + $('#lng').val())
+	 	drawMap($('#lat').val(), $('#lng').val(), $('#restaurantname').val());
+	// })();
+	</script> -->
+  
 {% endblock %}
