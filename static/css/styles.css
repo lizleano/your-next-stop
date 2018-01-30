@@ -21,6 +21,11 @@ h4,
 h5 {
     font-family: Lato, sans-serif;
     text-transform: uppercase;
+
+    /*font-family: 'Lato', sans-serif;
+    font-family: 'Open Sans', sans-serif;
+    font-family: 'Tangerine', cursive;
+    font-family: 'Oleo Script', cursive;*/
 }
 
 h3 {
@@ -86,6 +91,8 @@ h3 {
     margin-bottom: 100px;
 }
 
+
+
 .search-results {
     color: #FF9800;
 }
@@ -114,6 +121,8 @@ h3 {
 
 #foodpicture {
     height: 100%;
+    width: 100%;
+    padding: 0;
 }
 
 /* --------- HOMEPAGE --------- */
@@ -197,6 +206,11 @@ h3 {
     font-size: 80%;
 }
 
+/*---------------- MAP -------------*/
+#mapid { 
+    height: 100%; 
+}
+
 /* --------- USER PROFILE --------- */
 .top-header {
     color: #FFFFFF;
@@ -263,9 +277,14 @@ h3 {
     margin-bottom: 0;
 }
 
+.media-final-body p {
+    font-size: 15px;
+    margin-bottom: 0;
+}
+
 #map {
     border-radius: 0.75%;
-    height: 565px;
+    height: 100%; /*565px;*/
 }
 
 /* --------- RESULT PAGE --------- */
@@ -275,11 +294,13 @@ h3 {
     vertical-align: center;
 }
 
+
 label.btn.btn-default.like.active{
   background-color: #FF9800;
   border-color: #FF9800;
   color: #FFFFFF;
 }
+
 
 /* --------- RESTAURANT LIST --------- */
 
@@ -294,8 +315,9 @@ label.btn.btn-default.like.active{
 
 /* --------- RESTAURANT PROFILE --------- */
 .restaurant-profile-pic img{
-    width: 200px;
-    height: 200px;
+    width: 250px;
+    height: 250px;
+    padding: 0;
 }
 
 #user-profile-pic-sm img {
@@ -315,3 +337,6 @@ label.btn.btn-default.like.active{
 .team-content li{
   display: inline;
 }
+
+
+
