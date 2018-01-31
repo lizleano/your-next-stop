@@ -598,26 +598,22 @@ def ML_random_trees(zipcode, user_id):
     one_hot_cuisine = to_categorical(cuisine_transformed)
 
     # Adjusting one hot to fit df
-    chinese = []
-    french = []
-    greek = []
-    italian = []
-    japanese = []
-    korean = []
-    mediterranean = []
-    mexican = []
-    thai = []
+    cuisines_unique = restaurants_df['cuisine'].unique()
+    cuisines = []
+    for cuisine in cuisines_unique:
+        cuisines.append(cuisine.lower())
+    cuisines.sort()
+    cuisines
 
-    for one_hot in one_hot_cuisine:
-        chinese.append(int(one_hot[0]))
-        french.append(int(one_hot[1]))
-        greek.append(int(one_hot[2]))
-        italian.append(int(one_hot[3]))
-        japanese.append(int(one_hot[4]))
-        korean.append(int(one_hot[5]))
-        mediterranean.append(int(one_hot[6]))
-        mexican.append(int(one_hot[7]))
-        thai.append(int(one_hot[8]))
+    # Reshaping one_hot_cuisine
+    cuisine_dict = {}
+
+    for x in range(len(cuisines)):
+        current_cuisine = cuisines[x]
+        encoded_cuisine = []
+        for y in range(len(restaurants_df)):
+            encoded_cuisine.append(int(one_hot_cuisine[y][x]))
+        cuisine_dict[current_cuisine] = encoded_cuisine
 
     # label encode price
     encoder.fit(restaurants_df['price'])
@@ -630,18 +626,11 @@ def ML_random_trees(zipcode, user_id):
         'rating': restaurants_df['rating'],
         'reservations': restaurants_df['reservations'],
         'delivery': restaurants_df['delivery'],
-        'chinese': chinese,
-        'french': french,
-        'greek': greek,
-        'italian': italian,
-        'japanese': japanese,
-        'korean': korean,
-        'mediterranean': mediterranean,
-        'mexican': mexican,
-        'thai': thai,
         'yelpid': restaurants_df['yelpid']
     })
 
+    for key, value in cuisine_dict.items():
+        res_new[key] = value
 
     # By user 
     # Storing data for specified user (user 1)
@@ -672,26 +661,21 @@ def ML_random_trees(zipcode, user_id):
     one_hot_cuisine = to_categorical(cuisine_transformed)
 
     # Reshaping one_hot_cuisine
-    chinese = []
-    french = []
-    greek = []
-    italian = []
-    japanese = []
-    korean = []
-    mediterranean = []
-    mexican = []
-    thai = []
+    cuisines_unique = df['cuisine'].unique()
+    cuisines = []
+    for cuisine in cuisines_unique:
+        cuisines.append(cuisine.lower())
+    cuisines.sort()
+    cuisines
 
-    for one_hot in one_hot_cuisine:
-        chinese.append(int(one_hot[0]))
-        french.append(int(one_hot[1]))
-        greek.append(int(one_hot[2]))
-        italian.append(int(one_hot[3]))
-        japanese.append(int(one_hot[4]))
-        korean.append(int(one_hot[5]))
-        mediterranean.append(int(one_hot[6]))
-        mexican.append(int(one_hot[7]))
-        thai.append(int(one_hot[8]))
+    cuisine_dict = {}
+
+    for x in range(len(cuisines)):
+        current_cuisine = cuisines[x]
+        encoded_cuisine = []
+        for y in range(len(df)):
+            encoded_cuisine.append(int(one_hot_cuisine[y][x]))
+        cuisine_dict[current_cuisine] = encoded_cuisine
 
 
     # Encoding price
@@ -705,18 +689,13 @@ def ML_random_trees(zipcode, user_id):
         'rating': df['rating'],
         'reservations': df['reservations'],
         'delivery': df['delivery'],
-        'chinese': chinese,
-        'french': french,
-        'greek': greek,
-        'italian': italian,
-        'japanese': japanese,
-        'korean': korean,
-        'mediterranean': mediterranean,
-        'mexican': mexican,
-        'thai': thai,
         'like': df['like'],
         'yelpid': df['yelpid']
     })
+
+    for key, value in cuisine_dict.items():
+        df_new[key] = value
+        
     # X & y values
     X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]
     y = df_new['like']
