@@ -382,7 +382,7 @@ def findZipcode(zipcode):
 
 def get_default_cuisines():
     # get list of cuisine to show on drop down    
-    cuisines = sessiondb.query(CuisineType.type, CuisineType.value).all()    
+    cuisines = sessiondb.query(CuisineType.type, CuisineType.value).order_by(CuisineType.type).all()    
     return cuisines
 
 def get_restaurants(zipcode,cuisines=None):
