@@ -50,8 +50,12 @@ newOffset = 0
 # MySQL Setup
 #################################################
 
-# key_pd = pd.read_csv("Keys.py")
-# sqlkey = key_pd[key_pd['name'] == 'sqlkey']['key'].max().strip()
+# from boto.s3.connection import S3Connection
+# s3 = S3Connection(os.environ['JAWSDB_URL'])
+# print(os.environ['JAWSDB_URL'])
+
+key_pd = pd.read_csv("Keys.py")
+sqlkey = key_pd[key_pd['name'] == 'sqlkey']['key'].max().strip()
 # print(sqlkey)
 
 DB_CONN_URI_DEFAULT= sqlkey
@@ -218,41 +222,32 @@ def requestpage_post():
     totalresults = len(group1_results) + len(group1_results) + len(group1_results)   
 
     return render_template("resultpage.html",restaurant_results1=group1_results,
-        restaurant_results2=group2_results,restaurant_results3=group3_results, totalresults=totalresults)
+        restaurant_results2=group2_results,restaurant_results3=group3_results, totalresults=totalresults,zipcode=zipcode)
 
 # RESULT PAGE
 @app.route("/resultpage", methods=['POST'])
-def resultpage_post():
+def resultpage_post():    
+    print(request.form)
     user_id = session['current_user']['userid']
+    zipcode = request.form.get("zipcode")
+    print(zipcode)
 
     f = request.form
     for key in f.keys():
         for value in f.getlist(key):
+            if (key == 'zipcode'):
+                continue
             yelpid = key.split("_")[1]
+            addSelectedInformation(user_id, yelpid, int(value)) 
 
-            # for test purposes show the last one selected
-            if value=="1":
-                yelpid_the_one=yelpid
-                print("found the one")                    
-            print (key,value, yelpid)
-            addSelectedInformation(user_id, yelpid, int(value))
+    print("User id profile: %s" % session['current_user']['userid'])
+    r2, yelpid_the_one = ML_random_trees (zipcode, session['current_user']['userid'])
+        
+    print (r2)
 
     if len(yelpid_the_one) > 0:
         data_dict = get_restaurant_yelpid(yelpid_the_one)
         print(data_dict)
-
-    r2_all = ML_random_trees ()
-
-    print("User id profile: %s" % session['current_user']['userid'])
-    r2_user = ML_random_trees (session['current_user']['userid'])
-
-    r2 = {
-        "user": r2_user,
-        "all": r2_all
-    }
-
-    print(r2_all)
-    print(r2_user)
 
     # Default route to render machine learning page    
     # return redirect("/machinelearning/%s" % session['current_user']['userid'])
@@ -576,35 +571,35 @@ def get_zipcode_data(zipcode,cuisines):
         print("zip code no results !!!!")
     return data
 
-def ML_random_trees(user_id=None):
-    if (user_id==None):
-        results = sessiondb.query(Search_Information).all()
-    else:
-        results = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).all()
-
-
-    print(len(results))
+def ML_random_trees(zipcode, user_id):
+    # Filter restaurants list by requested zipcode
+    restaurants = sessiondb.query(Restaurant).filter(Restaurant.requestid == int(zipcode))
 
     data = []
-    for result in results:
-        restaurant = {            
+    for result in restaurants:
+        restaurant = {        
+            'cuisine': result.cuisine,
+            'delivery': result.delivery,           
             'price': result.price,
             'rating': float(result.rating),
             'reservations': result.reservations,
-            'delivery': result.delivery,
-            'cuisine': result.cuisine,
-            'like': result.like,
-            'userid':result.userid
+            'yelpid': result.yelpid
         }
 
         data.append(restaurant)
-    df = pd.DataFrame(data)
+    restaurants_df = pd.DataFrame(data)
 
-    # label encode cuisine
-    # le = preprocessing.onehotencoder()
-    le = LabelEncoder()
-    le.fit(df['cuisine'])
-    cuisine_transformed = le.transform(df['cuisine'])
+
+    # Getting YelpIDs of restaurants shown
+    selections = sessiondb.query(Search_Information).filter(Search_Information.userid==user_id).order_by(Search_Information.searchid.desc()).limit(12).all()
+
+    for select in selections:
+        current_yelp = select.yelpid
+        restaurants_df = restaurants_df[restaurants_df.yelpid != current_yelp]
+    
+    encoder = LabelEncoder()
+    encoder.fit(restaurants_df['cuisine'])
+    cuisine_transformed = encoder.transform(restaurants_df['cuisine'])
     
     # use onehot encoding for cuisine
     one_hot_cuisine = to_categorical(cuisine_transformed)
@@ -632,9 +627,84 @@ def ML_random_trees(user_id=None):
         thai.append(int(one_hot[8]))
 
     # label encode price
-    le.fit(df['price'])
-    price_transformed = le.transform(df['price'])
-    price_transformed
+    encoder.fit(restaurants_df['price'])
+    price_transformed = encoder.transform(restaurants_df['price'])
+    # price_transformed
+
+    # DataFrame with encoded values
+    res_new = pd.DataFrame({
+        'price': price_transformed,
+        'rating': restaurants_df['rating'],
+        'reservations': restaurants_df['reservations'],
+        'delivery': restaurants_df['delivery'],
+        'chinese': chinese,
+        'french': french,
+        'greek': greek,
+        'italian': italian,
+        'japanese': japanese,
+        'korean': korean,
+        'mediterranean': mediterranean,
+        'mexican': mexican,
+        'thai': thai,
+        'yelpid': restaurants_df['yelpid']
+    })
+
+
+    # By user 
+    # Storing data for specified user (user 1)
+    results = sessiondb.query(Search_Information).filter(Search_Information.userid == user_id).all()
+
+    data = []
+    for result in results:
+        restaurant = {            
+            'price': result.price,
+            'rating': float(result.rating),
+            'reservations': result.reservations,
+            'delivery': result.delivery,
+            'cuisine': result.cuisine,
+            'like': result.like,
+            'yelpid': result.yelpid
+        }
+        data.append(restaurant)
+
+
+    df = pd.DataFrame(data)
+    df.head()
+
+    # One-hot encoding cuisine
+    encoder = LabelEncoder()
+    encoder.fit(df['cuisine'])
+    cuisine_transformed = encoder.transform(df['cuisine'])
+
+    one_hot_cuisine = to_categorical(cuisine_transformed)
+
+    # Reshaping one_hot_cuisine
+    chinese = []
+    french = []
+    greek = []
+    italian = []
+    japanese = []
+    korean = []
+    mediterranean = []
+    mexican = []
+    thai = []
+
+    for one_hot in one_hot_cuisine:
+        chinese.append(int(one_hot[0]))
+        french.append(int(one_hot[1]))
+        greek.append(int(one_hot[2]))
+        italian.append(int(one_hot[3]))
+        japanese.append(int(one_hot[4]))
+        korean.append(int(one_hot[5]))
+        mediterranean.append(int(one_hot[6]))
+        mexican.append(int(one_hot[7]))
+        thai.append(int(one_hot[8]))
+
+
+    # Encoding price
+    encoder.fit(df['price'])
+    price_transformed = encoder.transform(df['price'])
+
 
     # DataFrame with encoded values
     df_new = pd.DataFrame({
@@ -651,22 +721,37 @@ def ML_random_trees(user_id=None):
         'mediterranean': mediterranean,
         'mexican': mexican,
         'thai': thai,
-        'userid': df['userid']
+        'like': df['like'],
+        'yelpid': df['yelpid']
     })
-
-    target = df['like']
-    target_name = ['dislike','like']
+    # X & y values
+    X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]
+    y = df_new['like']
 
     feature_names = df_new.columns
 
     # train data to make r2 more meaningful
-    X_train, X_test, y_train, y_test = train_test_split(df_new, target, random_state=40)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=40)
 
-    rf = RandomForestClassifier(n_estimators=10)
+    rf = RandomForestClassifier(n_estimators=33)
     rf = rf.fit(X_train, y_train)
     r2 = rf.score(X_test, y_test)
 
-    return float(r2)
+    # Predicting data
+    X_res = res_new.loc[:, res_new.columns != 'yelpid']
+    predictions = rf.predict(X_res)
+
+    res_new["predictions"] = predictions
+
+    # Selecting random restaurant with predictions = 1 
+    yesses = res_new[res_new['predictions'] == 1]
+    random_res = yesses.sample(n=1)
+    yelp_rec = str(random_res['yelpid'])
+    yelp_rec = yelp_rec.split(" ")[4].split("\n")[0]
+    yelp_rec
+    
+
+    return (float(r2), yelp_rec)
 
 
 
