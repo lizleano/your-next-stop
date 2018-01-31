@@ -11,6 +11,7 @@
       <input type="hidden" id=lat value="{{ restaurant.latitude }}">
       <input type="hidden" id=lng value="{{ restaurant.longitude }}">
       <input type="hidden" id=yelpid value="{{ restaurant.yelpid }}">
+      <input type="hidden" id=r2 value="{{ r2 }}">
       <div class="row">
       	<div class="col-xs-12 col-md-6">
 			<div class="panel panel-default">
@@ -54,14 +55,7 @@
 
 {% endblock %}
 
-
-{% block javascript %}	
-	<!-- <script src="../static/js/restaurantMarker.js"></script>
-	<script>
-	// $(function(){
-	 	alert($('#restaurantname').val() + ": " + $('#lat').val() + " " + $('#lng').val())
-	 	drawMap($('#lat').val(), $('#lng').val(), $('#restaurantname').val());
-	// })();
-	</script> -->
+{% block javascript %}
+  <script type='text/javascript' src='../static/js/machinelearning.js'></script> 
   
 {% endblock %}

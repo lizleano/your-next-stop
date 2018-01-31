@@ -205,9 +205,6 @@ def requestpage():
 
 @app.route("/requestpage", methods=['POST'])
 def requestpage_post():
-    print(request.form)
-    print(session['current_user'])
-
     zipcode = request.form.get("zipcode")
     if (request.form.get('cuisine')):
         cuisines=request.form.getlist('cuisine')
@@ -219,18 +216,20 @@ def requestpage_post():
     group2_results = get_shuffled_results(4, results)
     group3_results = get_shuffled_results(4, results)
 
-    totalresults = len(group1_results) + len(group1_results) + len(group1_results)   
+    totalresults = len(group1_results) + len(group1_results) + len(group1_results)
+
+    if totalresults == 0:
+        flash("No restaurants found to evaluate for this zipcode.  Try another zipcode", danger)
+        redirect("/requestpage")
 
     return render_template("resultpage.html",restaurant_results1=group1_results,
         restaurant_results2=group2_results,restaurant_results3=group3_results, totalresults=totalresults,zipcode=zipcode)
 
 # RESULT PAGE
 @app.route("/resultpage", methods=['POST'])
-def resultpage_post():    
-    print(request.form)
+def resultpage_post():
     user_id = session['current_user']['userid']
     zipcode = request.form.get("zipcode")
-    print(zipcode)
 
     f = request.form
     for key in f.keys():
@@ -247,7 +246,6 @@ def resultpage_post():
 
     if len(yelpid_the_one) > 0:
         data_dict = get_restaurant_yelpid(yelpid_the_one)
-        print(data_dict)
 
     # Default route to render machine learning page    
     # return redirect("/machinelearning/%s" % session['current_user']['userid'])
@@ -398,19 +396,20 @@ def get_restaurants(zipcode,cuisines=None):
     cuisines = ",".join(cuisines)
     print(cuisines)
 
+
+    newdate = datetime.now()
+    print(newdate)
     if not findZipcode(zipcode):
         # always populate data with all cuisines in table
         data = yelpsearch(get_default_cuisines(), zipcode)
         if (len(data) > 0):
             # New request.  date gets automatically populated the first time. 
-            zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode)
+            zp = ZipRequest(requestid=int(zipcode), zipcode=zipcode, lastrequestdate = newdate)
             sessiondb.add(zp)
             sessiondb.commit()
             zipCodeFound = False
     else:
         print(int(zipcode))
-        newdate = datetime.now()
-        print(newdate)
 
         sessiondb.query(ZipRequest).filter(ZipRequest.requestid == int(zipcode)).\
             update({ZipRequest.lastrequestdate: newdate}, synchronize_session=False)
@@ -483,8 +482,6 @@ def get_search_information(user_id):
         }
         data.append(searchinfo_dict)
 
-    print(data)
-
     return data
 
 def get_users(user_id):
@@ -502,8 +499,6 @@ def get_users(user_id):
             'email': r.email
         }
         data.append(user_dict)
-
-    print(data)
 
     return data
 
@@ -564,8 +559,6 @@ def get_zipcode_data(zipcode,cuisines):
                     'transactions': transactions
                 }
             data.append(rest_dict)
-
-        print("zip code collected from DB!!!!")
 
     except NoResultFound:
         print("zip code no results !!!!")
@@ -802,11 +795,7 @@ def yelpsearch(cuisines, location):
             newOffset = 0
         else:
             newOffset = i*SEARCH_LIMIT
-            # print ("offset: %s   limit: %s" % (newOffset, SEARCH_LIMIT))
 
-        
-            
-        # data = yelpsearch(DEFAULT_TERM, zipcodes, newOffset)
         url_params = {
             # term (str): The search term passed to the API. In our case, restaurants
             'term': DEFAULT_TERM,
@@ -816,12 +805,9 @@ def yelpsearch(cuisines, location):
             'offset': newOffset,
             'sort_by': SORT_BY
         }
-
-        print(url_params)
         
         response = searchrequest(API_HOST, SEARCH_PATH, ykey_access_token, url_params=url_params)
 
-        print("records returned: %s" % (len(response['businesses'])))
         addCtr = 0
         # if (len(response['businesses'] > 0)):
         for business in response['businesses']:
@@ -860,7 +846,6 @@ def yelpsearch(cuisines, location):
                     'yelpid': business['id'],
                     'cuisine': foundcuisine
                 }
-                # print(rest_dict)
                 restaurants.append(rest_dict)
             except:
                 print("error!!!!!")
@@ -869,8 +854,6 @@ def yelpsearch(cuisines, location):
     df = pd.DataFrame(restaurants)
     # df.to_csv("restaurant_%s.csv" % location, index=False)
     updateSQL(df, location)
-
-    print("restaurants collected through yelp API!!!!")
 
     return restaurants
 
