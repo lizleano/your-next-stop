@@ -219,7 +219,7 @@ def requestpage_post():
     totalresults = len(group1_results) + len(group1_results) + len(group1_results)
 
     if totalresults == 0:
-        flash("No restaurants found to evaluate for this zipcode.  Try another zipcode", danger)
+        flash("No restaurants found to evaluate for this zipcode.  Try another zipcode", "danger")
         redirect("/requestpage")
 
     return render_template("resultpage.html",restaurant_results1=group1_results,
@@ -582,6 +582,8 @@ def ML_random_trees(zipcode, user_id):
         data.append(restaurant)
     restaurants_df = pd.DataFrame(data)
 
+    # Filtered restaurants
+    restaurants_df = restaurants_df[["cuisine", "delivery", "price", "rating", "reservations", "yelpid"]]
 
     # Getting YelpIDs of restaurants shown
     selections = sessiondb.query(Search_Information).filter(Search_Information.userid==user_id).order_by(Search_Information.searchid.desc()).limit(12).all()
@@ -598,18 +600,17 @@ def ML_random_trees(zipcode, user_id):
     one_hot_cuisine = to_categorical(cuisine_transformed)
 
     # Adjusting one hot to fit df
-    cuisines_unique = restaurants_df['cuisine'].unique()
+    restaurant_cuisines_unique = restaurants_df['cuisine'].unique()
     cuisines = []
-    for cuisine in cuisines_unique:
-        cuisines.append(cuisine.lower())
-    cuisines.sort()
-    cuisines
+
+    restaurant_cuisines_unique = [item.lower() for item in restaurant_cuisines_unique]
+    restaurant_cuisines_unique.sort()
 
     # Reshaping one_hot_cuisine
     cuisine_dict = {}
 
-    for x in range(len(cuisines)):
-        current_cuisine = cuisines[x]
+    for x in range(len(restaurant_cuisines_unique)):
+        current_cuisine = restaurant_cuisines_unique[x]    
         encoded_cuisine = []
         for y in range(len(restaurants_df)):
             encoded_cuisine.append(int(one_hot_cuisine[y][x]))
@@ -662,11 +663,8 @@ def ML_random_trees(zipcode, user_id):
 
     # Reshaping one_hot_cuisine
     cuisines_unique = df['cuisine'].unique()
-    cuisines = []
-    for cuisine in cuisines_unique:
-        cuisines.append(cuisine.lower())
+    cuisines = [item.lower() for item in cuisines_unique]
     cuisines.sort()
-    cuisines
 
     cuisine_dict = {}
 
@@ -695,12 +693,19 @@ def ML_random_trees(zipcode, user_id):
 
     for key, value in cuisine_dict.items():
         df_new[key] = value
-        
-    # X & y values
-    X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]
-    y = df_new['like']
 
-    feature_names = df_new.columns
+    # X & y values
+    # find the difference in the list
+    diff_unique = list(set(cuisines) - set(restaurant_cuisines_unique))
+    print(len(diff_unique))
+
+    if len(diff_unique) > 0:
+        # remove column that is not available in training data
+        X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid') & (~df_new.columns .isin(diff_unique))]
+    else:    
+        X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]
+        
+    y = df_new['like']
 
     # train data to make r2 more meaningful
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=40)
@@ -720,7 +725,7 @@ def ML_random_trees(zipcode, user_id):
     random_res = yesses.sample(n=1)
     yelp_rec = str(random_res['yelpid'])
     yelp_rec = yelp_rec.split(" ")[4].split("\n")[0]
-    yelp_rec
+    print("yelp_rec: " + yelp_rec)
     
 
     return (float(r2), yelp_rec)
@@ -767,7 +772,9 @@ def yelpsearch(cuisines, location):
 
     # Returns:
     #     list of restaurants
-    cuisines = ",".join(['%s' % (c[1]) for c in cuisines])
+
+    
+    cuisine_type, cuisine_alias = zip(*cuisines)
     restaurants = []
     for i in range(10):
         if i == 0:
@@ -778,7 +785,7 @@ def yelpsearch(cuisines, location):
         url_params = {
             # term (str): The search term passed to the API. In our case, restaurants
             'term': DEFAULT_TERM,
-            'categories': cuisines,
+            'categories': cuisine_alias,
             'location': location,
             'limit': SEARCH_LIMIT,
             'offset': newOffset,
@@ -804,8 +811,9 @@ def yelpsearch(cuisines, location):
                 lng = business['coordinates']['longitude']
 
                 for c in business['categories']:
-                    if c['alias'] in cuisines:
-                        foundcuisine = c['title']
+                    if c['alias'] in cuisine_alias:
+                        foundcuisine = cuisine_type[cuisine_alias.index(c['alias'])]
+                        continue
 
                 rest_dict = {
                     'requestid': location,
@@ -831,13 +839,11 @@ def yelpsearch(cuisines, location):
                 pass
     
     df = pd.DataFrame(restaurants)
+    print("number of restaurants: " + str(len(restaurants)))
     # df.to_csv("restaurant_%s.csv" % location, index=False)
     updateSQL(df, location)
 
     return restaurants
-
-
-
 
 # Initiate the Flask app
 if __name__ == '__main__':    
