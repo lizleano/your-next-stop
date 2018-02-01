@@ -212,6 +212,8 @@ def requestpage_post():
     else:
         results = get_restaurants(zipcode)
 
+    print(len(results))
+
     group1_results = get_shuffled_results(4, results)
     group2_results = get_shuffled_results(4, results)
     group3_results = get_shuffled_results(4, results)
@@ -484,6 +486,14 @@ def get_search_information(user_id):
 
     return data
 
+def get_shuffled_results(numberofrecords, results):
+    shuffle(results)
+    # if len(results) < 8:
+
+    print(results)
+
+    return results[:numberofrecords]
+
 def get_users(user_id):
     if user_id is None:        
         result = sessiondb.query(Users).all()
@@ -694,17 +704,11 @@ def ML_random_trees(zipcode, user_id):
     for key, value in cuisine_dict.items():
         df_new[key] = value
 
-    # X & y values
     # find the difference in the list
     diff_unique = list(set(cuisines) - set(restaurant_cuisines_unique))
-    print(len(diff_unique))
 
-    if len(diff_unique) > 0:
-        # remove column that is not available in training data
-        X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid') & (~df_new.columns .isin(diff_unique))]
-    else:    
-        X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]
-        
+    # X & y values   
+    X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]        
     y = df_new['like']
 
     # train data to make r2 more meaningful
@@ -713,6 +717,10 @@ def ML_random_trees(zipcode, user_id):
     rf = RandomForestClassifier(n_estimators=33)
     rf = rf.fit(X_train, y_train)
     r2 = rf.score(X_test, y_test)
+
+    # add new column of missing cuisine and default to 0 
+    for c in diff_unique:
+        res_new[c] = 0
 
     # Predicting data
     X_res = res_new.loc[:, res_new.columns != 'yelpid']
@@ -723,8 +731,9 @@ def ML_random_trees(zipcode, user_id):
     # Selecting random restaurant with predictions = 1 
     yesses = res_new[res_new['predictions'] == 1]
     random_res = yesses.sample(n=1)
-    yelp_rec = str(random_res['yelpid'])
-    yelp_rec = yelp_rec.split(" ")[4].split("\n")[0]
+    yelp_rec = random_res['yelpid'].item()    
+    # yelp_rec = str(random_res['yelpid'])    
+    # yelp_rec = yelp_rec.split(" ")[4].split("\n")[0]
     print("yelp_rec: " + yelp_rec)
     
 
@@ -775,6 +784,7 @@ def yelpsearch(cuisines, location):
 
     
     cuisine_type, cuisine_alias = zip(*cuisines)
+    print(cuisine_alias)
     restaurants = []
     for i in range(10):
         if i == 0:
