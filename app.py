@@ -705,11 +705,18 @@ def ML_random_trees(zipcode, user_id):
         df_new[key] = value
 
     # find the difference in the list
-    diff_unique = list(set(cuisines) - set(restaurant_cuisines_unique))
+    if len(cuisines) > len(restaurant_cuisines_unique):
+        diff_unique = list(set(cuisines) - set(restaurant_cuisines_unique))
+    else:    
+        diff_unique = list(set(restaurant_cuisines_unique) - set(cuisines))
 
     # X & y values   
     X = df_new.loc[:, (df_new.columns != 'like') & (df_new.columns != 'yelpid')]        
     y = df_new['like']
+
+    if len(restaurant_cuisines_unique) > len(cuisines):
+        for c in diff_unique:
+            X[c] = 0
 
     # train data to make r2 more meaningful
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=40)
@@ -719,9 +726,10 @@ def ML_random_trees(zipcode, user_id):
     r2 = rf.score(X_test, y_test)
 
     # add new column of missing cuisine and default to 0 
-    for c in diff_unique:
-        res_new[c] = 0
-
+    if len(cuisines) > len(restaurant_cuisines_unique):
+        for c in diff_unique:
+            res_new[c] = 0
+            
     # Predicting data
     X_res = res_new.loc[:, res_new.columns != 'yelpid']
     predictions = rf.predict(X_res)
